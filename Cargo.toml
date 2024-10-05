@@ -3,5 +3,10 @@ name = "full-page-recommendations"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "full_page_recommender"
+crate-type = ["cdylib"]
+
 [dependencies]
+pyo3 = { version = "0.22.3", features = ["abi3-py310"] }
 rand = "0.9.0-alpha.2"

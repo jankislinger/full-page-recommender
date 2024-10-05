@@ -146,8 +146,8 @@ mod tests {
     #[test]
     fn test_item_selection() {
         let items = item_indices(
-            &vec![0.3, 0.5, 0.1, 0.9],
-            &vec![3, 5, 8, 13],
+            &[0.3, 0.5, 0.1, 0.9],
+            &[3, 5, 8, 13],
             2,
         );
         assert_eq!(items, vec![13, 5])
