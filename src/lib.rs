@@ -1,5 +1,6 @@
 use pyo3::prelude::*;
 
+mod collection;
 mod collections;
 
 #[pyfunction]

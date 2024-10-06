@@ -1,26 +1,9 @@
+use crate::collection::Collection;
 use std::cmp::Ordering;
 
 const TEMP_PENALTY: f64 = 0.3;
 const COOLING_FACTOR: f64 = 0.75;
 const NUM_ITEMS_ROW: usize = 12;
-
-pub struct Collection {
-    scores: Vec<f64>,
-    items: Vec<usize>,
-    is_sorted: bool,
-    is_available: bool,
-}
-
-impl Collection {
-    fn new(scores: Vec<f64>, items: Vec<usize>, is_sorted: bool) -> Self {
-        Self {
-            scores,
-            items,
-            is_sorted,
-            is_available: true,
-        }
-    }
-}
 
 pub struct RecommenderState {
     collections: Vec<Collection>,
@@ -67,15 +50,12 @@ impl RecommenderState {
     }
 
     fn recommend_row(&self) -> (usize, Vec<usize>) {
-        let item_scores = final_scores(&self.collections, &self.item_temps);
-        let collection_idx = find_best_collection(&self.collections, NUM_ITEMS_ROW)
-            .expect("no more collections to recommend");
+        let collection_idx =
+            find_best_collection(&self.collections, &self.item_temps, NUM_ITEMS_ROW)
+                .expect("no more collections to recommend");
 
-        let items = item_indices(
-            &item_scores[collection_idx],
-            &self.collections[collection_idx].items,
-            NUM_ITEMS_ROW,
-        );
+        let collection = &self.collections[collection_idx];
+        let items = collection.recommend_indices(&self.item_temps, NUM_ITEMS_ROW, TEMP_PENALTY);
         (collection_idx, items)
     }
 
@@ -88,52 +68,18 @@ impl RecommenderState {
     }
 }
 
-fn final_scores(collections: &[Collection], temperature: &[f64]) -> Vec<Vec<f64>> {
-    collections
-        .iter()
-        .map(|col| final_scores_row(col, temperature))
-        .collect()
-}
-
-fn final_scores_row(collection: &Collection, temperature: &[f64]) -> Vec<f64> {
-    collection
-        .scores
-        .iter()
-        .zip(collection.items.iter())
-        .map(|(&score, &i)| score * TEMP_PENALTY.powf(temperature[i]))
-        .collect()
-}
-
-fn item_indices(scores: &[f64], items: &[usize], top_k: usize) -> Vec<usize> {
-    let mut scored_items: Vec<(&f64, &usize)> = scores.iter().zip(items).collect();
-    scored_items.sort_by(|&(a, _), &(b, _)| b.partial_cmp(a).unwrap_or(Ordering::Equal));
-    scored_items
-        .iter()
-        .map(|&(_, i)| i)
-        .take(top_k)
-        .cloned()
-        .collect()
-}
-
-fn find_best_collection(collections: &[Collection], top_k: usize) -> Option<usize> {
+fn find_best_collection(
+    collections: &[Collection],
+    item_temps: &[f64],
+    top_k: usize,
+) -> Option<usize> {
     collections
         .iter()
         .enumerate()
         .filter(|(_, col)| col.is_available)
-        .map(|(i, col)| (i, collection_score(&col.scores, col.is_sorted, top_k)))
+        .map(|(i, col)| (i, col.score(item_temps, top_k, TEMP_PENALTY)))
         .max_by(|&(_, a), &(_, b)| a.partial_cmp(&b).unwrap_or(Ordering::Equal))
         .map(|(i, _)| i)
-}
-
-fn collection_score(item_scores: &[f64], is_sorted: bool, top_k: usize) -> f64 {
-    let total_score: f64 = if is_sorted {
-        item_scores.iter().take(top_k).sum()
-    } else {
-        let mut sorted_scores = item_scores.to_vec();
-        sorted_scores.sort_by(|a, b| b.partial_cmp(a).unwrap_or(Ordering::Equal));
-        sorted_scores.iter().take(top_k).sum()
-    };
-    total_score / top_k as f64
 }
 
 fn guess_num_items(item_indices: &[Vec<usize>]) -> usize {
@@ -154,7 +100,7 @@ mod tests {
         let state = RecommenderState::new(
             vec![vec![0.1, 0.2], vec![0.5, 0.9, 0.2]],
             vec![vec![0, 1], vec![2, 3, 1]],
-            vec![false, false],
+            vec![false; 2],
         );
         let (collection_idx, items) = state.recommend_row();
         assert_eq!(collection_idx, 1);
@@ -162,8 +108,18 @@ mod tests {
     }
 
     #[test]
-    fn test_item_selection() {
-        let items = item_indices(&[0.3, 0.5, 0.1, 0.9], &[3, 5, 8, 13], 2);
-        assert_eq!(items, vec![13, 5])
+    fn recommend_page_with_deduplication() {
+        let mut state = RecommenderState::new(
+            vec![
+                vec![0.92, 0.91, 0.90],
+                vec![0.35, 0.31, 0.30],
+                vec![0.32, 0.31, 0.30],
+            ],
+            vec![vec![0, 1, 2], vec![0, 3, 4], vec![5, 6, 7]],
+            vec![false; 3],
+        );
+        let (collection_indices, items) = state.recommend_page(3);
+        assert_eq!(collection_indices, vec![0, 2, 1]);
+        assert_eq!(items, vec![vec![0, 1, 2], vec![5, 6, 7], vec![3, 4, 0],]);
     }
 }
