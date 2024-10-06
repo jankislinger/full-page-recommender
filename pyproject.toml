@@ -8,6 +8,8 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 
+[tool.poetry.group.dev.dependencies]
+maturin = "^1.7.4"
 
 [build-system]
 requires = ["maturin>=1.0,<2.0"]
