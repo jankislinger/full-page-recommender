@@ -11,13 +11,20 @@ pub struct RecommenderState {
 }
 
 impl RecommenderState {
-    pub fn new(
+    pub fn new(collections: Vec<Collection>) -> Self {
+        let num_items = guess_num_items(&collections);
+        Self {
+            collections,
+            item_temps: vec![0.0; num_items],
+        }
+    }
+
+    pub fn from_scores(
         item_scores: Vec<Vec<f64>>,
         items_in_collections: Vec<Vec<usize>>,
         is_sorted: Vec<bool>,
     ) -> Self {
         // TODO: get rid of `.clone()`; or, better, initialize with collections
-        let num_items = guess_num_items(&items_in_collections);
         let collections = item_scores
             .iter()
             .zip(items_in_collections.iter())
@@ -26,10 +33,7 @@ impl RecommenderState {
                 Collection::new(scores.clone(), items.clone(), sorted)
             })
             .collect();
-        Self {
-            collections,
-            item_temps: vec![0.0; num_items],
-        }
+        Self::new(collections)
     }
 
     pub fn recommend_page(&mut self, num_rows: usize) -> (Vec<usize>, Vec<Vec<usize>>) {
@@ -82,10 +86,10 @@ fn find_best_collection(
         .map(|(i, _)| i)
 }
 
-fn guess_num_items(item_indices: &[Vec<usize>]) -> usize {
-    item_indices
+fn guess_num_items(collections: &[Collection]) -> usize {
+    collections
         .iter()
-        .flat_map(|x| x.iter())
+        .flat_map(|x| x.items.iter())
         .max()
         .map(|x| x + 1)
         .unwrap_or(0)
@@ -97,11 +101,10 @@ mod tests {
 
     #[test]
     fn recommendations_for_one_row() {
-        let state = RecommenderState::new(
-            vec![vec![0.1, 0.2], vec![0.5, 0.9, 0.2]],
-            vec![vec![0, 1], vec![2, 3, 1]],
-            vec![false; 2],
-        );
+        let state = RecommenderState::new(vec![
+            Collection::new(vec![0.1, 0.2], vec![0, 1], false),
+            Collection::new(vec![0.5, 0.9, 0.2], vec![2, 3, 1], false),
+        ]);
         let (collection_idx, items) = state.recommend_row();
         assert_eq!(collection_idx, 1);
         assert_eq!(items, vec![3, 2, 1])
@@ -109,15 +112,11 @@ mod tests {
 
     #[test]
     fn recommend_page_with_deduplication() {
-        let mut state = RecommenderState::new(
-            vec![
-                vec![0.92, 0.91, 0.90],
-                vec![0.35, 0.31, 0.30],
-                vec![0.32, 0.31, 0.30],
-            ],
-            vec![vec![0, 1, 2], vec![0, 3, 4], vec![5, 6, 7]],
-            vec![false; 3],
-        );
+        let mut state = RecommenderState::new(vec![
+            Collection::new(vec![0.92, 0.91, 0.90], vec![0, 1, 2], false),
+            Collection::new(vec![0.35, 0.31, 0.30], vec![0, 3, 4], false),
+            Collection::new(vec![0.32, 0.31, 0.30], vec![5, 6, 7], false),
+        ]);
         let (collection_indices, items) = state.recommend_page(3);
         assert_eq!(collection_indices, vec![0, 2, 1]);
         assert_eq!(items, vec![vec![0, 1, 2], vec![5, 6, 7], vec![3, 4, 0],]);
