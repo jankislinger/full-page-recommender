@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 
 mod collection;
-mod collections;
+mod recommender_state;
 
 #[pyfunction]
 fn recommend(
@@ -10,7 +10,7 @@ fn recommend(
     num_rows: usize,
 ) -> (Vec<usize>, Vec<Vec<usize>>) {
     let num_collections = item_scores.len();
-    let mut collections = collections::RecommenderState::new(
+    let mut collections = recommender_state::RecommenderState::new(
         item_scores,
         items_in_collections,
         vec![false; num_collections],
