@@ -7,13 +7,13 @@ mod recommender_state;
 fn recommend(
     item_scores: Vec<Vec<f64>>,
     items_in_collections: Vec<Vec<usize>>,
+    is_sorted: Vec<bool>,
     num_rows: usize,
 ) -> (Vec<usize>, Vec<Vec<usize>>) {
-    let num_collections = item_scores.len();
     let mut collections = recommender_state::RecommenderState::from_scores(
         item_scores,
         items_in_collections,
-        vec![false; num_collections],
+        is_sorted,
     );
     collections.recommend_page(num_rows)
 }

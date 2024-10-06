@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 
 const TEMP_PENALTY: f64 = 0.3;
 const COOLING_FACTOR: f64 = 0.75;
-const NUM_ITEMS_ROW: usize = 12;
+const NUM_ITEMS_ROW: usize = 8;
 
 pub struct RecommenderState {
     collections: Vec<Collection>,
@@ -108,6 +108,18 @@ mod tests {
         let (collection_idx, items) = state.recommend_row();
         assert_eq!(collection_idx, 1);
         assert_eq!(items, vec![3, 2, 1])
+    }
+
+    #[test]
+    fn recommend_single_sorted_collection() {
+        let coll_items = vec![0, 1, 2];
+        let state = RecommenderState::new(vec![Collection::new(
+            vec![0.1, 0.9, 0.4],
+            coll_items.clone(),
+            true,
+        )]);
+        let (_, recom_items) = state.recommend_row();
+        assert_eq!(recom_items, coll_items)
     }
 
     #[test]
