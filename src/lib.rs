@@ -2,9 +2,12 @@ use pyo3::prelude::*;
 
 mod collections;
 
-
 #[pyfunction]
-fn recommend(item_scores: Vec<Vec<f64>>, items_in_collections: Vec<Vec<usize>>, num_rows: usize) -> (Vec<usize>, Vec<Vec<usize>>) {
+fn recommend(
+    item_scores: Vec<Vec<f64>>,
+    items_in_collections: Vec<Vec<usize>>,
+    num_rows: usize,
+) -> (Vec<usize>, Vec<Vec<usize>>) {
     let num_collections = item_scores.len();
     let mut collections = collections::Collections::new(
         item_scores,

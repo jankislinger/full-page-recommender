@@ -1,9 +1,10 @@
 import random
 import time
 
-from full_page_recommender import full_page_recommender
+from full_page_recommender import recommend
 
-if __name__ == '__main__':
+
+def main() -> None:
     num_collections = 200
     num_items_in_collection = 100
     num_items = 5000
@@ -19,7 +20,7 @@ if __name__ == '__main__':
         for _ in range(num_collections)
     ]
     start_time = time.time()
-    collections, items = full_page_recommender.recommend(
+    collections, items = recommend(
         item_scores,
         items_in_collection,
         num_rows=30,
@@ -31,3 +32,7 @@ if __name__ == '__main__':
         print(f"Items: {row_items}")
 
     print(f"\nElapsed: {elapsed * 1000:.1f}ms")
+
+
+if __name__ == "__main__":
+    main()
