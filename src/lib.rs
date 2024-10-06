@@ -9,7 +9,7 @@ fn recommend(
     num_rows: usize,
 ) -> (Vec<usize>, Vec<Vec<usize>>) {
     let num_collections = item_scores.len();
-    let mut collections = collections::Collections::new(
+    let mut collections = collections::RecommenderState::new(
         item_scores,
         items_in_collections,
         vec![false; num_collections],

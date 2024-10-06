@@ -4,28 +4,47 @@ const TEMP_PENALTY: f64 = 0.3;
 const COOLING_FACTOR: f64 = 0.75;
 const NUM_ITEMS_ROW: usize = 12;
 
-pub struct Collections {
-    item_scores: Vec<Vec<f64>>,
-    items_in_collections: Vec<Vec<usize>>,
-    is_sorted: Vec<bool>,
-    is_available: Vec<bool>,
+pub struct Collection {
+    scores: Vec<f64>,
+    items: Vec<usize>,
+    is_sorted: bool,
+    is_available: bool,
+}
+
+impl Collection {
+    fn new(scores: Vec<f64>, items: Vec<usize>, is_sorted: bool) -> Self {
+        Self {
+            scores,
+            items,
+            is_sorted,
+            is_available: true,
+        }
+    }
+}
+
+pub struct RecommenderState {
+    collections: Vec<Collection>,
     item_temps: Vec<f64>,
 }
 
-impl Collections {
+impl RecommenderState {
     pub fn new(
         item_scores: Vec<Vec<f64>>,
         items_in_collections: Vec<Vec<usize>>,
         is_sorted: Vec<bool>,
     ) -> Self {
-        let num_collections = item_scores.len();
+        // TODO: get rid of `.clone()`; or, better, initialize with collections
         let num_items = guess_num_items(&items_in_collections);
-
+        let collections = item_scores
+            .iter()
+            .zip(items_in_collections.iter())
+            .zip(is_sorted.iter())
+            .map(|((scores, items), &sorted)| {
+                Collection::new(scores.clone(), items.clone(), sorted)
+            })
+            .collect();
         Self {
-            item_scores,
-            items_in_collections,
-            is_sorted,
-            is_available: vec![true; num_collections],
+            collections,
             item_temps: vec![0.0; num_items],
         }
     }
@@ -48,29 +67,20 @@ impl Collections {
     }
 
     fn recommend_row(&self) -> (usize, Vec<usize>) {
-        let item_scores = final_scores(
-            &self.item_scores,
-            &self.items_in_collections,
-            &self.item_temps,
-        );
-        let collection_idx = find_best_collection(
-            &item_scores,
-            &self.is_sorted,
-            &self.is_available,
-            NUM_ITEMS_ROW,
-        )
-        .expect("no more collections to recommend");
+        let item_scores = final_scores(&self.collections, &self.item_temps);
+        let collection_idx = find_best_collection(&self.collections, NUM_ITEMS_ROW)
+            .expect("no more collections to recommend");
 
         let items = item_indices(
             &item_scores[collection_idx],
-            &self.items_in_collections[collection_idx],
+            &self.collections[collection_idx].items,
             NUM_ITEMS_ROW,
         );
         (collection_idx, items)
     }
 
-    fn mark_recommendations(&mut self, collection: usize, items: &[usize]) {
-        self.is_available[collection] = false;
+    fn mark_recommendations(&mut self, collection_idx: usize, items: &[usize]) {
+        self.collections[collection_idx].is_available = false;
         self.item_temps = self.item_temps.iter().map(|t| t * COOLING_FACTOR).collect();
         for &item in items {
             self.item_temps[item] += 1.0;
@@ -78,26 +88,18 @@ impl Collections {
     }
 }
 
-fn final_scores(
-    item_scores: &[Vec<f64>],
-    items_in_collections: &[Vec<usize>],
-    temperature: &[f64],
-) -> Vec<Vec<f64>> {
-    item_scores
+fn final_scores(collections: &[Collection], temperature: &[f64]) -> Vec<Vec<f64>> {
+    collections
         .iter()
-        .zip(items_in_collections)
-        .map(|(scores, items)| final_scores_row(scores, items, temperature))
+        .map(|col| final_scores_row(col, temperature))
         .collect()
 }
 
-fn final_scores_row(
-    item_scores: &[f64],
-    items_in_collection: &[usize],
-    temperature: &[f64],
-) -> Vec<f64> {
-    item_scores
+fn final_scores_row(collection: &Collection, temperature: &[f64]) -> Vec<f64> {
+    collection
+        .scores
         .iter()
-        .zip(items_in_collection)
+        .zip(collection.items.iter())
         .map(|(&score, &i)| score * TEMP_PENALTY.powf(temperature[i]))
         .collect()
 }
@@ -113,17 +115,12 @@ fn item_indices(scores: &[f64], items: &[usize], top_k: usize) -> Vec<usize> {
         .collect()
 }
 
-fn find_best_collection(
-    item_scores: &[Vec<f64>],
-    is_sorted: &[bool],
-    is_available: &[bool],
-    top_k: usize,
-) -> Option<usize> {
-    is_available
+fn find_best_collection(collections: &[Collection], top_k: usize) -> Option<usize> {
+    collections
         .iter()
         .enumerate()
-        .filter_map(|(i, &val)| if val { Some(i) } else { None })
-        .map(|i| (i, collection_score(&item_scores[i], is_sorted[i], top_k)))
+        .filter(|(_, col)| col.is_available)
+        .map(|(i, col)| (i, collection_score(&col.scores, col.is_sorted, top_k)))
         .max_by(|&(_, a), &(_, b)| a.partial_cmp(&b).unwrap_or(Ordering::Equal))
         .map(|(i, _)| i)
 }
@@ -154,12 +151,12 @@ mod tests {
 
     #[test]
     fn recommendations_for_one_row() {
-        let coll = Collections::new(
+        let state = RecommenderState::new(
             vec![vec![0.1, 0.2], vec![0.5, 0.9, 0.2]],
             vec![vec![0, 1], vec![2, 3, 1]],
             vec![false, false],
         );
-        let (collection_idx, items) = coll.recommend_row();
+        let (collection_idx, items) = state.recommend_row();
         assert_eq!(collection_idx, 1);
         assert_eq!(items, vec![3, 2, 1])
     }
