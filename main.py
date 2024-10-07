@@ -19,10 +19,12 @@ def main() -> None:
         [random.randrange(num_items) for _ in range(num_items_in_collection)]
         for _ in range(num_collections)
     ]
+    is_sorted = [False for _ in range(num_collections)]
     start_time = time.time()
     collections, items = recommend(
         item_scores,
         items_in_collection,
+        is_sorted,
         num_rows=30,
     )
     elapsed = time.time() - start_time

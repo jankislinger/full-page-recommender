@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "full-page-recommendations"
+name = "full-page-recommender"
 version = "0.1.0"
 description = ""
 authors = ["Jan Kislinger <jan.kislinger@gmail.com>"]

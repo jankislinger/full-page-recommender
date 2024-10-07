@@ -1,8 +1,8 @@
 use crate::collection::Collection;
 use std::cmp::Ordering;
 
-const TEMP_PENALTY: f64 = 0.3;
-const COOLING_FACTOR: f64 = 0.75;
+const TEMP_PENALTY: f64 = 0.1;
+const COOLING_FACTOR: f64 = 0.85;
 const NUM_ITEMS_ROW: usize = 8;
 
 pub struct RecommenderState {

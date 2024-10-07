@@ -33,8 +33,8 @@ but keeps them spaced out.
 Get the repo locally:
 
 ```shell
-git clone git@github.com:jankislinger/full-page-recommendations.git
-cd full-page-recommendations
+git clone git@github.com:jankislinger/full-page-recommender.git
+cd full-page-recommender
 ```
 
 Run example in Python:
