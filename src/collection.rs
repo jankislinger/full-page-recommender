@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 
 //TODO: avoid pub(crate) attributes
+#[derive(Clone)]
 pub struct Collection {
     pub(crate) scores: Vec<f64>,
     pub(crate) items: Vec<usize>,

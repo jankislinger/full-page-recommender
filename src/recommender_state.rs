@@ -15,23 +15,6 @@ impl RecommenderState {
         }
     }
 
-    pub fn from_scores(
-        item_scores: Vec<Vec<f64>>,
-        items_in_collections: Vec<Vec<usize>>,
-        is_sorted: Vec<bool>,
-    ) -> Self {
-        // TODO: get rid of `.clone()`; or, better, initialize with collections
-        let collections = item_scores
-            .iter()
-            .zip(items_in_collections.iter())
-            .zip(is_sorted.iter())
-            .map(|((scores, items), &sorted)| {
-                Collection::new(scores.clone(), items.clone(), sorted)
-            })
-            .collect();
-        Self::new(collections)
-    }
-
     pub fn recommend_page(
         &mut self,
         num_rows: usize,
