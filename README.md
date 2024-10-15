@@ -23,10 +23,19 @@ a model, but I plan to add [EASE][ease-arxiv] in the future. Additionally, I
 aim to implement a solution to automatically generate collections and their
 labels using Node2Vec embedding and nested clustering.
 
+## Key Features
+
+### Item De-duplication
+
 De-duplication uses item temperatures. When an item is recommended in a
-collection, its temperature increases, reducing its score in other
-collections for future rows. This allows the item to appear in multiple rows
-but keeps them spaced out.
+collection, its temperature increases, reducing its score for future rows. 
+This allows the item to appear in multiple rows but keeps them spaced out.
+
+### Device-specific recommendations
+
+Each device type typically shows different number of items without the need
+of horizontal scrolling. For that reason we allow passing in score for each
+tile position to optimize for each screen size.
 
 ## Examples
 
@@ -54,4 +63,5 @@ python main.py
 ```
 
 [ease-arxiv]: https://arxiv.org/abs/1905.03375
+
 [zombieland-wiki]: https://en.wikipedia.org/wiki/Zombieland

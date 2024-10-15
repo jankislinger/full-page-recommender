@@ -19,16 +19,28 @@ impl Collection {
         }
     }
 
-    pub(crate) fn score(&self, item_temps: &[f64], top_k: usize, temp_penalty: f64) -> f64 {
-        let item_scores = dedupe_scores(&self.scores, &self.items, item_temps, temp_penalty);
-        let total_score: f64 = if self.is_sorted {
-            item_scores.iter().take(top_k).sum()
-        } else {
-            let mut sorted_scores = item_scores.to_vec();
-            sorted_scores.sort_by(|a, b| b.partial_cmp(a).unwrap_or(Ordering::Equal));
-            sorted_scores.iter().take(top_k).sum()
-        };
-        total_score / top_k as f64
+    #[allow(dead_code)]
+    fn score_geom(&self, item_temps: &[f64], top_k: usize, q: f64, temp_penalty: f64) -> f64 {
+        let tot = (1.0 - q.powi(top_k as i32)) / (1.0 - q);
+        let position_mask: Vec<f64> = (0..top_k).map(|i| q.powi(i as i32) / tot).collect();
+        self.score(item_temps, &position_mask, temp_penalty)
+    }
+
+    pub(crate) fn score(
+        &self,
+        item_temps: &[f64],
+        position_mask: &[f64],
+        temp_penalty: f64,
+    ) -> f64 {
+        let mut item_scores = dedupe_scores(&self.scores, &self.items, item_temps, temp_penalty);
+        if !self.is_sorted {
+            item_scores.sort_by(|a, b| b.partial_cmp(a).unwrap_or(Ordering::Equal))
+        }
+        item_scores
+            .iter()
+            .zip(position_mask.iter())
+            .map(|(&a, &b)| a * b)
+            .sum()
     }
 
     pub(crate) fn recommend_indices(

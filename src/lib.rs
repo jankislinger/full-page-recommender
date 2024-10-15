@@ -21,11 +21,11 @@ impl PyCollection {
 }
 
 #[pyfunction]
-#[pyo3(signature = (collections, num_rows, *, num_items_row=8, temp_penalty=0.1, cooling_factor=0.85))]
+#[pyo3(signature = (collections, position_mask, num_rows, *, temp_penalty=0.1, cooling_factor=0.85))]
 fn recommend(
     collections: Vec<PyRef<PyCollection>>,
+    position_mask: Vec<f64>,
     num_rows: usize,
-    num_items_row: usize,
     temp_penalty: f64,
     cooling_factor: f64,
 ) -> (Vec<usize>, Vec<Vec<usize>>) {
@@ -34,8 +34,8 @@ fn recommend(
         .into_iter()
         .map(|c| c.collection.clone())
         .collect();
-    let mut recommender_state = RecommenderState::new(collections);
-    recommender_state.recommend_page(num_rows, num_items_row, temp_penalty, cooling_factor)
+    let mut recommender_state = RecommenderState::new(collections, position_mask);
+    recommender_state.recommend_page(num_rows, temp_penalty, cooling_factor)
 }
 
 #[pymodule]

@@ -8,10 +8,14 @@ def main() -> None:
     num_collections = 200
     num_items_in_collection = 100
     num_items = 5000
+    num_rows = 50
+    num_items_row = 24
     sorted_ratio = 0.1
 
     random.seed(42)
 
+    position_mask = [0.8 ** i for i in range(num_items_row)]
+    position_mask = [x / sum(position_mask) for x in position_mask]
 
     collections = [
         PyCollection(
@@ -23,7 +27,7 @@ def main() -> None:
     ]
 
     start_time = time.time()
-    collections, items = recommend(collections, num_rows=30, num_items_row=8)
+    collections, items = recommend(collections, position_mask, num_rows=num_rows)
     elapsed = time.time() - start_time
 
     for i, (col_idx, row_items) in enumerate(zip(collections, items)):
