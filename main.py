@@ -5,11 +5,11 @@ from full_page_recommender import recommend, PyCollection
 
 
 def main() -> None:
-    num_collections = 200
-    num_items_in_collection = 100
-    num_items = 5000
-    num_rows = 50
-    num_items_row = 24
+    num_collections = 1_000
+    num_items_in_collection = 250
+    num_items = 10_000
+    num_rows = 100
+    num_items_row = 32
     sorted_ratio = 0.1
 
     random.seed(42)

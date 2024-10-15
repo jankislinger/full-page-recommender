@@ -3,6 +3,8 @@ use std::cmp::Ordering;
 
 pub struct RecommenderState {
     collections: Vec<Collection>,
+    max_scores: Vec<f64>,
+    collection_indices: Vec<usize>,
     position_mask: Vec<f64>,
     item_temps: Vec<f64>,
 }
@@ -10,10 +12,27 @@ pub struct RecommenderState {
 impl RecommenderState {
     pub fn new(collections: Vec<Collection>, position_mask: Vec<f64>) -> Self {
         let num_items = guess_num_items(&collections);
+        let item_temps = vec![0.0; num_items];
+        let mut scored_collections: Vec<(usize, f64, Collection)> = collections
+            .into_iter()
+            .enumerate()
+            .map(|(i, c)| (i, c.score(&item_temps, &position_mask, 0.0), c))
+            .collect();
+        scored_collections
+            .sort_by(|(_, a, _), (_, b, _)| b.partial_cmp(a).unwrap_or(Ordering::Equal));
+        let collection_indices = scored_collections.iter().map(|&(i, _, _)| i).collect();
+        let max_scores = scored_collections.iter().map(|&(_, s, _)| s).collect();
+
+        let collections = scored_collections
+            .into_iter()
+            .map(|(_, _, coll)| coll)
+            .collect();
         Self {
             collections,
+            max_scores,
+            collection_indices,
             position_mask,
-            item_temps: vec![0.0; num_items],
+            item_temps,
         }
     }
 
@@ -38,12 +57,14 @@ impl RecommenderState {
         temp_penalty: f64,
         cooling_factor: f64,
     ) -> (usize, Vec<usize>) {
-        let (collection, items) = self.recommend_row(temp_penalty);
+        // returns position of the original vector
+        let (collection, items) = self.recommend_row_impl(temp_penalty);
         self.mark_recommendations(collection, &items, cooling_factor);
-        (collection, items)
+        (self.collection_indices[collection], items)
     }
 
-    fn recommend_row(&self, temp_penalty: f64) -> (usize, Vec<usize>) {
+    fn recommend_row_impl(&self, temp_penalty: f64) -> (usize, Vec<usize>) {
+        // returns position of the sorted vector
         let collection_idx = self
             .find_best_collection(temp_penalty)
             .expect("no more collections to recommend");
@@ -68,18 +89,28 @@ impl RecommenderState {
     }
 
     fn find_best_collection(&self, temp_penalty: f64) -> Option<usize> {
-        self.collections
-            .iter()
-            .enumerate()
-            .filter(|(_, col)| col.is_available)
-            .map(|(i, col)| {
-                (
-                    i,
-                    col.score(&self.item_temps, &self.position_mask, temp_penalty),
-                )
-            })
-            .max_by(|&(_, a), &(_, b)| a.partial_cmp(&b).unwrap_or(Ordering::Equal))
-            .map(|(i, _)| i)
+        let mut best: Option<(usize, f64)> = None;
+        for (i, coll) in self.collections.iter().enumerate() {
+            if !coll.is_available {
+                continue;
+            }
+
+            if let Some((_, best_val)) = best {
+                if best_val >= self.max_scores[i] {
+                    break;
+                }
+            }
+
+            let score = coll.score(&self.item_temps, &self.position_mask, temp_penalty);
+            if let Some((_, best_val)) = best {
+                if score > best_val {
+                    best = Some((i, score));
+                }
+            } else {
+                best = Some((i, score));
+            }
+        }
+        best.map(|(i, _)| i)
     }
 }
 
@@ -98,14 +129,14 @@ mod tests {
 
     #[test]
     fn recommendations_for_one_row() {
-        let state = RecommenderState::new(
+        let mut state = RecommenderState::new(
             vec![
                 Collection::new(vec![0.1, 0.2], vec![0, 1], false),
                 Collection::new(vec![0.5, 0.9, 0.2], vec![2, 3, 1], false),
             ],
             vec![0.6, 0.3, 0.1],
         );
-        let (collection_idx, items) = state.recommend_row(0.1);
+        let (collection_idx, items) = state.emit_recommendation(0.1, 0.0);
         assert_eq!(collection_idx, 1);
         assert_eq!(items, vec![3, 2, 1])
     }
@@ -113,7 +144,7 @@ mod tests {
     #[test]
     fn recommend_single_sorted_collection() {
         let coll_items = vec![0, 1, 2];
-        let state = RecommenderState::new(
+        let mut state = RecommenderState::new(
             vec![Collection::new(
                 vec![0.1, 0.9, 0.4],
                 coll_items.clone(),
@@ -121,7 +152,7 @@ mod tests {
             )],
             vec![0.6, 0.3, 0.1],
         );
-        let (_, recom_items) = state.recommend_row(0.1);
+        let (_, recom_items) = state.emit_recommendation(0.1, 0.0);
         assert_eq!(recom_items, coll_items)
     }
 
