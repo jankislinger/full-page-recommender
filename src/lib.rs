@@ -13,9 +13,9 @@ struct PyCollection {
 #[pymethods]
 impl PyCollection {
     #[new]
-    #[pyo3(signature = (scores, items, is_sorted=false))]
-    fn py_new(scores: Vec<f64>, items: Vec<usize>, is_sorted: bool) -> Self {
-        let collection = Collection::new(scores, items, is_sorted);
+    #[pyo3(signature = (index, scores, items, is_sorted=false))]
+    fn py_new(index: usize, scores: Vec<f64>, items: Vec<usize>, is_sorted: bool) -> Self {
+        let collection = Collection::new(index, scores, items, is_sorted);
         PyCollection { collection }
     }
 }
@@ -28,7 +28,7 @@ fn recommend(
     num_rows: usize,
     temp_penalty: f64,
     cooling_factor: f64,
-) -> (Vec<usize>, Vec<Vec<usize>>) {
+) -> Vec<(usize, Vec<usize>)> {
     // TODO: do it without cloning Collection
     let collections: Vec<Collection> = collections.iter().map(|c| c.collection.clone()).collect();
     let mut recommender_state = RecommenderState::new(collections, position_mask);

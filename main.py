@@ -19,18 +19,19 @@ def main() -> None:
 
     collections = [
         PyCollection(
+            index=i,
             scores=[random.random() for _ in range(num_items_in_collection)],
             items=[random.randrange(num_items) for _ in range(num_items_in_collection)],
             is_sorted=random.random() < sorted_ratio,
         )
-        for _ in range(num_collections)
+        for i in range(num_collections)
     ]
 
     start_time = time.time()
-    collections, items = recommend(collections, position_mask, num_rows=num_rows)
+    rows = recommend(collections, position_mask, num_rows=num_rows)
     elapsed = time.time() - start_time
 
-    for i, (col_idx, row_items) in enumerate(zip(collections, items)):
+    for i, (col_idx, row_items) in enumerate(rows):
         print(f"Row {i + 1}: Collection {col_idx}")
         print(f"Items: {row_items}")
 
