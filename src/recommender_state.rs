@@ -81,7 +81,7 @@ impl RecommenderState {
         items: &[usize],
         cooling_factor: f64,
     ) {
-        self.collections[collection_idx].is_available = false;
+        self.collections[collection_idx].disable();
         self.item_temps = self.item_temps.iter().map(|t| t * cooling_factor).collect();
         for &item in items {
             self.item_temps[item] += 1.0;
@@ -91,7 +91,7 @@ impl RecommenderState {
     fn find_best_collection(&self, temp_penalty: f64) -> Option<usize> {
         let mut best: Option<(usize, f64)> = None;
         for (i, coll) in self.collections.iter().enumerate() {
-            if !coll.is_available {
+            if !coll.is_available() {
                 continue;
             }
 
@@ -117,7 +117,7 @@ impl RecommenderState {
 fn guess_num_items(collections: &[Collection]) -> usize {
     collections
         .iter()
-        .flat_map(|x| x.items.iter())
+        .flat_map(|x| x.iter_items())
         .max()
         .map(|x| x + 1)
         .unwrap_or(0)

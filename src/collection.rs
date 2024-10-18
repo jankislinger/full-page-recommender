@@ -1,12 +1,12 @@
+use core::slice::Iter;
 use std::cmp::Ordering;
 
-//TODO: avoid pub(crate) attributes
 #[derive(Clone, Debug)]
 pub struct Collection {
-    pub(crate) scores: Vec<f64>,
-    pub(crate) items: Vec<usize>,
+    scores: Vec<f64>,
+    items: Vec<usize>,
     is_sorted: bool,
-    pub(crate) is_available: bool,
+    is_available: bool,
 }
 
 impl Collection {
@@ -17,6 +17,17 @@ impl Collection {
             is_sorted,
             is_available: true,
         }
+    }
+
+    pub fn iter_items(&self) -> Iter<usize> {
+        self.items.iter()
+    }
+
+    pub fn disable(&mut self) {
+        self.is_available = false;
+    }
+    pub fn is_available(&self) -> bool {
+        self.is_available
     }
 
     #[allow(dead_code)]

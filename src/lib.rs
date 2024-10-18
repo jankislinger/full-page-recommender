@@ -30,10 +30,7 @@ fn recommend(
     cooling_factor: f64,
 ) -> (Vec<usize>, Vec<Vec<usize>>) {
     // TODO: do it without cloning Collection
-    let collections: Vec<Collection> = collections
-        .into_iter()
-        .map(|c| c.collection.clone())
-        .collect();
+    let collections: Vec<Collection> = collections.iter().map(|c| c.collection.clone()).collect();
     let mut recommender_state = RecommenderState::new(collections, position_mask);
     recommender_state.recommend_page(num_rows, temp_penalty, cooling_factor)
 }
