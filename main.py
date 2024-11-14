@@ -1,7 +1,7 @@
 import random
 import time
 
-from full_page_recommender import recommend, PyCollection
+from full_page_recommender import PyCollection, recommend
 
 
 def main() -> None:
@@ -14,7 +14,7 @@ def main() -> None:
 
     random.seed(42)
 
-    position_mask = [0.8 ** i for i in range(num_items_row)]
+    position_mask = [0.8**i for i in range(num_items_row)]
     position_mask = [x / sum(position_mask) for x in position_mask]
 
     collections = [
