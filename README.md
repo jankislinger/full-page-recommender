@@ -25,7 +25,16 @@ labels using Node2Vec embedding and nested clustering.
 
 ## Key Features
 
-### Item De-duplication
+### Item relevancy
+
+The recommendations from FPR follow recommendation ratings from any model 
+that is provided to the system. Therefore, the recommendations are always 
+relevant for the specific user or any other entity for which it is 
+recommended. The model can also combine several models, each for different 
+use cases. For example, one may use interaction-based model for most 
+collections and metadata-based model for collections like _"Recently added"_.
+
+### Item de-duplication
 
 De-duplication uses item temperatures. When an item is recommended in a
 collection, its temperature increases, reducing its score for future rows. 
