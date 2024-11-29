@@ -1,62 +1,49 @@
 # Full Page Recommender
 
-This algorithm serves personalized pages with a list of collections and
-their corresponding items instead of a single set of items. It highlights
-the most relevant collections at the top and includes soft de-duplication to
-showcase the entire catalog, encouraging users to explore beyond their usual
-choices.
+The Full Page Recommender (FPR) delivers personalized pages with collections
+of items instead of a single list. Relevant collections appear at the top,
+using soft de-duplication to showcase the catalog and encourage users to
+explore beyond their typical interests.
 
-A collection is a group of scored items with a label for display.
-Collections can be sorted to keep the item order fixed, which is useful for
-static lists like _"Top 10 Books This Week."_
+A collection is a labeled group of scored items. Collections can maintain
+fixed item orders, useful for static lists like _"Top 10 Books This Week."_
 
-An item's score within a collection reflects its relevance to the user and
-the collection. For example, [_"Zombieland"_][zombieland-wiki] may score
-higher in the _"Comedy Movies"_ collection than in _"Post-Apocalyptic Movies"_
-since post-apocalyptic viewers may not be interested in it.
+An item's score reflects its relevance to both the user and the collection.
+For example, [_"Zombieland"_][zombieland-wiki] might score higher in _"Comedy
+Movies"_ than in _"Post-Apocalyptic Movies"_ due to audience preferences.
 
-Item scores can originate from a single recommendation algorithm, but this
-is not mandatory. For instance, one might use a model based on item metadata
-for collections with cold items, like _"Just Released,"_ while employing a
-rating-based model for other collections. The FPR algorithm does not provide
-a model, but I plan to add [EASE][ease-arxiv] in the future. Additionally, I
-aim to implement a solution to automatically generate collections and their
-labels using Node2Vec embedding and nested clustering.
+Scores can be derived from one or multiple recommendation models. For
+example, metadata-based models could handle _"Just Released"_ collections,
+while rating-based models fit others. FPR doesn’t include a model yet, but
+there are plans to add [EASE][ease-arxiv] and tools for auto-generating
+collections using Node2Vec embedding and nested clustering.
 
 ## Key Features
 
-### Item relevancy
+### Item Relevancy
 
-The recommendations from FPR follow recommendation ratings from any model 
-that is provided to the system. Therefore, the recommendations are always 
-relevant for the specific user or any other entity for which it is 
-recommended. The model can also combine several models, each for different 
-use cases. For example, one may use interaction-based model for most 
-collections and metadata-based model for collections like _"Recently Added 
-Movies"_ where there aren't enough interactions.
+FPR recommendations are based on any provided model, ensuring relevance to
+users. Multiple models can be combined for different use cases.
 
-### Promotes depth of catalog
+### Promotes Depth of Catalog
 
-The relevancy is preferred on top of the recommended page while bottom of the 
-page serves as presentation of entire catalog. That is done to ensure that 
-user is exposed to every genre (or similar categorization) the catalog 
-contains. For example, somebody who is interested in comedies would see 
-multiple rows containing comedy movies like _"Raunchy Comedies"_, _"Animated 
-Comedy"_, _"Trending Comedies"_, etc. throughout the page. On the other hand, 
-user that prefers different genres would probably receive just one 
-_"Comedies"_ row. 
+Top-ranked items appear prominently, while the bottom presents the broader
+catalog. This approach ensures users see the full range of genres or
+categories. For instance, comedy fans might see rows like _"Raunchy Comedies,"_
+_"Animated Comedy,"_ and _"Trending Comedies"_ across the page, while others
+receive only a single _"Comedies"_ row.
 
-### Item de-duplication
+### Item De-duplication
 
-De-duplication uses item temperatures. When an item is recommended in a
-collection, its temperature increases, reducing its score for future rows. 
-This allows the item to appear in multiple rows but keeps them spaced out.
+De-duplication uses item "temperatures." When an item is shown in a
+collection, its temperature rises, lowering its score in future rows. This
+ensures items can appear in multiple rows but remain spaced apart.
 
-### Device-specific recommendations
+### Device-Specific Recommendations
 
-Each device type typically shows different number of items without the need
-of horizontal scrolling. For that reason we allow passing in score for each
-tile position to optimize for each screen size.
+Different devices display varying numbers of items without scrolling. FPR
+supports position-based scoring to optimize recommendations for different
+screen sizes.
 
 ## Examples
 
