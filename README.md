@@ -45,7 +45,24 @@ Different devices display varying numbers of items without scrolling. FPR
 supports position-based scoring to optimize recommendations for different
 screen sizes.
 
-## Examples
+## Example
+
+Here's an example using MovieLens dataset and EASE model for personalized 
+item scoring. Assume, there is a user with following watch history. The 
+linear recommendations for such user would look like this.
+
+![Linear Recommendations from EASE](images/linear_recommendations.png)
+
+When we combine the same recommendation algorithm with FPR, we get following 
+structure of recommendations. (Only the first six rows out of 30-row page are 
+displayed here.)
+
+![Full Page Recommendations](images/full_page_recommendations.png)
+
+
+
+
+## Try It Yourself
 
 Get the repo locally:
 
