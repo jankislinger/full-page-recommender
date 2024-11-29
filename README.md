@@ -32,7 +32,19 @@ that is provided to the system. Therefore, the recommendations are always
 relevant for the specific user or any other entity for which it is 
 recommended. The model can also combine several models, each for different 
 use cases. For example, one may use interaction-based model for most 
-collections and metadata-based model for collections like _"Recently added"_.
+collections and metadata-based model for collections like _"Recently Added 
+Movies"_ where there aren't enough interactions.
+
+### Promotes depth of catalog
+
+The relevancy is preferred on top of the recommended page while bottom of the 
+page serves as presentation of entire catalog. That is done to ensure that 
+user is exposed to every genre (or similar categorization) the catalog 
+contains. For example, somebody who is interested in comedies would see 
+multiple rows containing comedy movies like _"Raunchy Comedies"_, _"Animated 
+Comedy"_, _"Trending Comedies"_, etc. throughout the page. On the other hand, 
+user that prefers different genres would probably receive just one 
+_"Comedies"_ row. 
 
 ### Item de-duplication
 
