@@ -4,13 +4,11 @@ from full_page_recommender import PyCollection, recommend
 
 
 class TestPyCollection(unittest.TestCase):
-
     def test_py_collections_init(self):
         PyCollection(index=0, scores=[0.5, 0.1], items=[1, 4], is_sorted=False)
 
 
 class TestRecommend(unittest.TestCase):
-
     def test_recommend(self):
         collections = [
             PyCollection(0, [0.5, 0.1], [1, 4], False),

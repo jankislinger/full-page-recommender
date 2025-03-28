@@ -3,7 +3,9 @@ import polars as pl
 from full_page_recommender import PyCollection, recommend
 
 
-def recommend_frames_2(items: pl.DataFrame, collections: pl.DataFrame, items_in_collections: pl.DataFrame) -> pl.DataFrame:
+def recommend_frames_2(
+    items: pl.DataFrame, collections: pl.DataFrame, items_in_collections: pl.DataFrame
+) -> pl.DataFrame:
     """Run recommender from a data frame.
 
     Args:
@@ -41,29 +43,35 @@ def recommend_frames_2(items: pl.DataFrame, collections: pl.DataFrame, items_in_
         └─────────┴────────────┴───────────────┴─────────┘
     """
     collections = (
-        items
-        .join(items_in_collections, on="item_id")
+        items.join(items_in_collections, on="item_id")
         .join(collections, on="collection_id")
         .with_columns(score=score_fun())
         .group_by("collection_id", "is_sorted")
-        .agg(pl.col("item_id").alias("item_ids"), pl.col("score").alias("scores"),)
+        .agg(
+            pl.col("item_id").alias("item_ids"),
+            pl.col("score").alias("scores"),
+        )
         .sort("collection_id")
         .with_columns(collection_index=pl.int_range(pl.len()))
     )
     py_collections = into_collection_list(collections)
     recommendations = recommend(py_collections, [0.8, 0.2], 1)
     return (
-        pl.DataFrame(recommendations, schema=["collection_index", "item_ids"], orient="row")
+        pl.DataFrame(
+            recommendations, schema=["collection_index", "item_ids"], orient="row"
+        )
         .with_columns(pl.int_range(pl.len()).alias("row_idx"))
-        .join(collections.select("collection_id", "collection_index"), on="collection_index")
+        .join(
+            collections.select("collection_id", "collection_index"),
+            on="collection_index",
+        )
         .drop("collection_index")
-        .explode("item_ids").rename({"item_ids": "item_id"})
+        .explode("item_ids")
+        .rename({"item_ids": "item_id"})
         .with_columns(pl.int_range(pl.len()).over("row_idx").alias("column_idx"))
         .select("row_idx", "column_idx", "collection_id", "item_id")
         .sort("row_idx", "column_idx")
     )
-
-
 
 
 def score_fun() -> pl.Expr:
@@ -123,8 +131,12 @@ def recommend_frame(
 
 
 def into_collection_list(collections: pl.DataFrame) -> list[PyCollection]:
-    collections = collections.select("collection_index", "scores", "item_ids", "is_sorted")
+    collections = collections.select(
+        "collection_index", "scores", "item_ids", "is_sorted"
+    )
     return [
-        PyCollection(row["collection_index"], row["scores"], row["item_ids"], row["is_sorted"])
+        PyCollection(
+            row["collection_index"], row["scores"], row["item_ids"], row["is_sorted"]
+        )
         for row in collections.iter_rows(named=True)
     ]
