@@ -5,7 +5,6 @@ edition = "2021"
 
 [lib]
 name = "full_page_recommender"
-crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.22.3", features = ["abi3-py310"] }

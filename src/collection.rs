@@ -85,7 +85,7 @@ impl Collection {
                 .map(|(i, &x)| (i, x))
                 .collect();
         item_scores.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap_or(Ordering::Equal));
-        let item_indices = item_scores
+        let item_indices: Vec<usize> = item_scores
             .iter()
             .take(top_k)
             .map(|&(i, _)| self.items[i])
