@@ -9,6 +9,11 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []
 
+[project.optional-dependencies]
+frames = [
+    "polars>=1.26.0",
+]
+
 [dependency-groups]
 dev = [
     "pytest>=8.3.5",
