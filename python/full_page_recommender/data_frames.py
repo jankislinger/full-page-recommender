@@ -4,7 +4,7 @@ from full_page_recommender import PyCollection, recommend
 
 
 def recommend_frames_2(
-    items: pl.DataFrame, collections: pl.DataFrame, items_in_collections: pl.DataFrame
+    items: pl.DataFrame, collections: pl.DataFrame, items_in_collections: pl.DataFrame, **kwargs,
 ) -> pl.DataFrame:
     """Run recommender from a data frame.
 
@@ -27,8 +27,8 @@ def recommend_frames_2(
         ...     "collection_score": [1.0, 0.3]
         ... })
         >>> items_in_collections_ = pl.DataFrame({
-        ...     "collection_id": [0, 0, 1, 1, 1, 1],
         ...     "item_id": [1, 4, 0, 1, 2, 3],
+        ...     "collection_id": [0, 0, 1, 1, 1, 1],
         ...     "affinity": [0.5, 0.1, 0.3, 0.3, 0.2, 0.1],
         ... })
         >>> recommend_frames_2(items_, collections_, items_in_collections_)
@@ -42,6 +42,9 @@ def recommend_frames_2(
         │ 0       ┆ 1          ┆ 0             ┆ 4       │
         └─────────┴────────────┴───────────────┴─────────┘
     """
+    items = items.select("item_id", "item_score")
+    collections = collections.select("collection_id", "is_sorted", "collection_score")
+    items_in_collections = items_in_collections.select("item_id", "collection_id", "affinity")
     collections = (
         items.join(items_in_collections, on="item_id")
         .join(collections, on="collection_id")
@@ -55,7 +58,7 @@ def recommend_frames_2(
         .with_columns(collection_index=pl.int_range(pl.len()))
     )
     py_collections = into_collection_list(collections)
-    recommendations = recommend(py_collections, [0.8, 0.2], 1)
+    recommendations = recommend(py_collections, **kwargs)
     return (
         pl.DataFrame(
             recommendations, schema=["collection_index", "item_ids"], orient="row"
