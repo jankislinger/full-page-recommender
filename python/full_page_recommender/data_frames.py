@@ -4,7 +4,13 @@ from full_page_recommender import PyCollection, recommend
 
 
 def recommend_frames_2(
-    items: pl.DataFrame, collections: pl.DataFrame, items_in_collections: pl.DataFrame, **kwargs,
+    items: pl.DataFrame,
+    collections: pl.DataFrame,
+    items_in_collections: pl.DataFrame,
+    *,
+    position_mask: list[float],
+    num_rows: int,
+    **kwargs,
 ) -> pl.DataFrame:
     """Run recommender from a data frame.
 
@@ -12,6 +18,8 @@ def recommend_frames_2(
         items (pl.DataFrame): A data frame containing items.
         collections (pl.DataFrame): A data frame containing collections.
         items_in_collections (pl.DataFrame): A data frame containing items in collections.
+        position_mask (list[float]): Weights of column position.
+        num_rows (int): Number of rows to recommend.
 
     Returns:
         pl.DataFrame: A data frame containing recommendations.
@@ -31,7 +39,10 @@ def recommend_frames_2(
         ...     "collection_id": [0, 0, 1, 1, 1, 1],
         ...     "affinity": [0.5, 0.1, 0.3, 0.3, 0.2, 0.1],
         ... })
-        >>> recommend_frames_2(items_, collections_, items_in_collections_)
+        >>> recommend_frames_2(
+        ...     items_, collections_, items_in_collections_,
+        ...     position_mask=[0.6, 0.3, 0.1], num_rows=1,
+        ... )
         shape: (2, 4)
         ┌─────────┬────────────┬───────────────┬─────────┐
         │ row_idx ┆ column_idx ┆ collection_id ┆ item_id │
@@ -44,7 +55,9 @@ def recommend_frames_2(
     """
     items = items.select("item_id", "item_score")
     collections = collections.select("collection_id", "is_sorted", "collection_score")
-    items_in_collections = items_in_collections.select("item_id", "collection_id", "affinity")
+    items_in_collections = items_in_collections.select(
+        "item_id", "collection_id", "affinity"
+    )
     collections = (
         items.join(items_in_collections, on="item_id")
         .join(collections, on="collection_id")
@@ -58,7 +71,7 @@ def recommend_frames_2(
         .with_columns(collection_index=pl.int_range(pl.len()))
     )
     py_collections = into_collection_list(collections)
-    recommendations = recommend(py_collections, **kwargs)
+    recommendations = recommend(py_collections, position_mask, num_rows, **kwargs)
     return (
         pl.DataFrame(
             recommendations, schema=["collection_index", "item_ids"], orient="row"

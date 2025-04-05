@@ -7,4 +7,4 @@ edition = "2021"
 name = "full_page_recommender"
 
 [dependencies]
-pyo3 = { version = "0.22.3", features = ["abi3-py310"] }
+pyo3 = { version = "0.22.3", features = ["extension-module", "abi3", "abi3-py310"] }
