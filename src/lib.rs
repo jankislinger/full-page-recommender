@@ -13,9 +13,9 @@ struct PyCollection {
 #[pymethods]
 impl PyCollection {
     #[new]
-    #[pyo3(signature = (index, scores, items, is_sorted=false))]
-    fn py_new(index: usize, scores: Vec<f64>, items: Vec<usize>, is_sorted: bool) -> Self {
-        let collection = Collection::new(index, scores, items, is_sorted);
+    #[pyo3(signature = (scores, items, is_sorted=false))]
+    fn py_new(scores: Vec<f64>, items: Vec<usize>, is_sorted: bool) -> Self {
+        let collection = Collection::new(scores, items, is_sorted);
         PyCollection { collection }
     }
 }

@@ -5,14 +5,14 @@ from full_page_recommender import PyCollection, recommend
 
 class TestPyCollection(unittest.TestCase):
     def test_py_collections_init(self):
-        PyCollection(index=0, scores=[0.5, 0.1], items=[1, 4], is_sorted=False)
+        PyCollection(scores=[0.5, 0.1], items=[1, 4], is_sorted=False)
 
 
 class TestRecommend(unittest.TestCase):
     def test_recommend(self):
         collections = [
-            PyCollection(0, [0.5, 0.1], [1, 4], False),
-            PyCollection(1, [0.3, 0.3, 0.2, 0.1], [0, 1, 2, 3], True),
+            PyCollection([0.5, 0.1], [1, 4], False),
+            PyCollection([0.3, 0.3, 0.2, 0.1], [0, 1, 2, 3], True),
         ]
         recommend(
             collections=collections,

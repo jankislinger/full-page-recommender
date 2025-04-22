@@ -5,7 +5,6 @@ use std::str::FromStr;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Collection {
-    index: usize,
     scores: Vec<f64>,
     items: Vec<usize>,
     is_sorted: bool,
@@ -13,9 +12,8 @@ pub struct Collection {
 }
 
 impl Collection {
-    pub fn new(index: usize, scores: Vec<f64>, items: Vec<usize>, is_sorted: bool) -> Self {
+    pub fn new(scores: Vec<f64>, items: Vec<usize>, is_sorted: bool) -> Self {
         Self {
-            index,
             scores,
             items,
             is_sorted,
@@ -75,9 +73,9 @@ impl Collection {
         item_temps: &[f64],
         top_k: usize,
         temp_penalty: f64,
-    ) -> (usize, Vec<usize>) {
+    ) -> Vec<usize> {
         if self.is_sorted {
-            return (self.index, self.items.iter().take(top_k).cloned().collect());
+            return self.items.iter().take(top_k).cloned().collect();
         }
 
         let mut item_scores: Vec<(usize, f64)> =
@@ -87,12 +85,11 @@ impl Collection {
                 .map(|(i, &x)| (i, x))
                 .collect();
         item_scores.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap_or(Ordering::Equal));
-        let item_indices: Vec<usize> = item_scores
+        item_scores
             .iter()
             .take(top_k)
             .map(|&(i, _)| self.items[i])
-            .collect();
-        (self.index, item_indices)
+            .collect()
     }
 }
 
@@ -123,9 +120,8 @@ mod tests {
 
     #[test]
     fn test_item_selection() {
-        let col = Collection::new(0, vec![0.3, 0.5, 0.1, 0.9], vec![3, 5, 8, 13], false);
-        let (i, items) = col.recommend_indices(&[0.0; 14], 2, 0.5);
-        assert_eq!(i, 0);
+        let col = Collection::new(vec![0.3, 0.5, 0.1, 0.9], vec![3, 5, 8, 13], false);
+        let items = col.recommend_indices(&[0.0; 14], 2, 0.5);
         assert_eq!(items, vec![13, 5]);
     }
 

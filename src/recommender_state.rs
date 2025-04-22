@@ -5,23 +5,29 @@ pub struct RecommenderState {
     collections: Vec<Collection>,
     max_scores: Vec<f64>,
     position_mask: Vec<f64>,
+    indices: Vec<usize>,
     item_temps: Vec<f64>,
 }
 
 impl RecommenderState {
     pub fn new(collections: Vec<Collection>, position_mask: Vec<f64>) -> Self {
         let num_items = guess_num_items(&collections);
-        let mut scored_collections: Vec<(f64, Collection)> = collections
+        let mut scored_collections: Vec<(usize, f64, Collection)> = collections
             .into_iter()
-            .map(|c| (c.potential(&position_mask), c))
+            .enumerate()
+            .map(|(i, c)| (i, c.potential(&position_mask), c))
             .collect();
-        scored_collections.sort_by(|&(a, _), &(b, _)| b.partial_cmp(&a).unwrap_or(Ordering::Equal));
-        let max_scores = scored_collections.iter().map(|&(s, _)| s).collect();
-        let collections = scored_collections.into_iter().map(|(_, c)| c).collect();
+        scored_collections.sort_by(ord_collection);
+
+        let indices = scored_collections.iter().map(|&(i, _, _)| i).collect();
+        let max_scores = scored_collections.iter().map(|&(_, s, _)| s).collect();
+        let collections = scored_collections.into_iter().map(|(_, _, c)| c).collect();
+
         Self {
             collections,
             max_scores,
             position_mask,
+            indices,
             item_temps: vec![0.0; num_items],
         }
     }
@@ -42,9 +48,10 @@ impl RecommenderState {
         temp_penalty: f64,
         cooling_factor: f64,
     ) -> Option<(usize, Vec<usize>)> {
-        let coll_idx: usize = self.find_best_collection(temp_penalty)?;
-        let collection = &mut self.collections[coll_idx];
-        let (coll_idx, items) =
+        let i: usize = self.find_best_collection(temp_penalty)?;
+        let coll_idx = self.indices[i];
+        let collection = &mut self.collections[i];
+        let items =
             collection.recommend_indices(&self.item_temps, self.position_mask.len(), temp_penalty);
         collection.disable();
         self.update_temperatures(&items, cooling_factor);
@@ -91,6 +98,10 @@ fn guess_num_items(collections: &[Collection]) -> usize {
         .unwrap_or(0)
 }
 
+fn ord_collection(a: &(usize, f64, Collection), b: &(usize, f64, Collection)) -> Ordering {
+    b.1.partial_cmp(&a.1).unwrap_or(Ordering::Equal)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -99,14 +110,14 @@ mod tests {
     fn recommendations_for_one_row() {
         let mut state = RecommenderState::new(
             vec![
-                Collection::new(0, vec![0.1, 0.2], vec![0, 1], false),
-                Collection::new(1, vec![0.5, 0.9, 0.2], vec![2, 3, 1], false),
+                Collection::new(vec![0.1, 0.2], vec![0, 1], false),
+                Collection::new(vec![0.5, 0.9, 0.2], vec![2, 3, 1], false),
             ],
             vec![0.6, 0.3, 0.1],
         );
         let (collection_idx, items) = state.emit_recommendation(0.1, 0.0).unwrap();
         assert_eq!(collection_idx, 1);
-        assert_eq!(&items, &[3, 2, 1])
+        assert_eq!(&items, &[3, 2, 1]);
     }
 
     #[test]
@@ -114,7 +125,6 @@ mod tests {
         let coll_items = vec![0, 1, 2];
         let mut state = RecommenderState::new(
             vec![Collection::new(
-                0,
                 vec![0.1, 0.9, 0.4],
                 coll_items.clone(),
                 true,
@@ -122,16 +132,16 @@ mod tests {
             vec![0.6, 0.3, 0.1],
         );
         let (_, recom_items) = state.emit_recommendation(0.1, 0.0).unwrap();
-        assert_eq!(&recom_items, &coll_items)
+        assert_eq!(&recom_items, &coll_items);
     }
 
     #[test]
     fn recommend_page_with_deduplication() {
         let mut state = RecommenderState::new(
             vec![
-                Collection::new(0, vec![0.92, 0.91, 0.90], vec![0, 1, 2], false),
-                Collection::new(1, vec![0.35, 0.31, 0.30], vec![0, 3, 4], false),
-                Collection::new(2, vec![0.32, 0.31, 0.30], vec![5, 6, 7], false),
+                Collection::new(vec![0.92, 0.91, 0.90], vec![0, 1, 2], false),
+                Collection::new(vec![0.35, 0.31, 0.30], vec![0, 3, 4], false),
+                Collection::new(vec![0.32, 0.31, 0.30], vec![5, 6, 7], false),
             ],
             vec![0.6, 0.3, 0.1],
         );

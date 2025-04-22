@@ -134,7 +134,7 @@ def recommend_frame(
         .sort("collection")
     )
     py_collections = [
-        PyCollection(row["collection"], row["score"], row["item"], row["is_sorted"])
+        PyCollection(row["score"], row["item"], row["is_sorted"])
         for row in collections.iter_rows(named=True)
     ]
     recommendations = recommend(py_collections, [0.8, 0.2], 1)
@@ -147,12 +147,5 @@ def recommend_frame(
 
 
 def into_collection_list(collections: pl.DataFrame) -> list[PyCollection]:
-    collections = collections.select(
-        "collection_index", "scores", "item_ids", "is_sorted"
-    )
-    return [
-        PyCollection(
-            row["collection_index"], row["scores"], row["item_ids"], row["is_sorted"]
-        )
-        for row in collections.iter_rows(named=True)
-    ]
+    collections = collections.select("scores", "item_ids", "is_sorted")
+    return [PyCollection(*row) for row in collections.iter_rows()]
