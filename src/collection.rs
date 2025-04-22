@@ -1,7 +1,9 @@
 use core::slice::Iter;
+use serde::Deserialize;
 use std::cmp::Ordering;
+use std::str::FromStr;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Collection {
     index: usize,
     scores: Vec<f64>,
@@ -94,6 +96,14 @@ impl Collection {
     }
 }
 
+impl FromStr for Collection {
+    type Err = serde_json::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        serde_json::from_str(s)
+    }
+}
+
 fn dedupe_scores(
     scores: &[f64],
     items: &[usize],
@@ -117,5 +127,29 @@ mod tests {
         let (i, items) = col.recommend_indices(&[0.0; 14], 2, 0.5);
         assert_eq!(i, 0);
         assert_eq!(items, vec![13, 5]);
+    }
+
+    #[test]
+    fn test_parsing_json_valid() {
+        let json_str = r#"
+            {
+                "index": 1,
+                "scores": [0.5, 1.0],
+                "items": [10, 20],
+                "is_sorted": true,
+                "is_available": false
+            }
+        "#;
+        json_str
+            .parse::<Collection>()
+            .expect("Valid string should be parsed");
+    }
+
+    #[test]
+    fn test_parsing_json_invalid() {
+        let json_str = "invalid string";
+        json_str
+            .parse::<Collection>()
+            .expect_err("Invalid string shouldn't be parsed");
     }
 }
