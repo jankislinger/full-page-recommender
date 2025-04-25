@@ -1,8 +1,12 @@
 use crate::collection::Collection;
+use crate::ease::EaseRanker;
+use crate::ranker::{CollectionDefinition, Ranker};
 use crate::recommender_state::RecommenderState;
 use pyo3::prelude::*;
 
 mod collection;
+mod ease;
+mod ranker;
 mod recommender_state;
 
 #[pyclass]
@@ -35,9 +39,59 @@ fn recommend(
     recommender_state.recommend_page(num_rows, temp_penalty, cooling_factor)
 }
 
+#[pyclass]
+struct PyEaseFPR {
+    ranker: EaseRanker,
+    collections: Vec<CollectionDefinition>,
+    position_mask: Vec<f64>,
+    num_rows: usize,
+    temp_penalty: f64,
+    cooling_factor: f64,
+}
+
+#[pymethods]
+impl PyEaseFPR {
+    #[new]
+    #[pyo3(signature = (ease_mat, items_in_collections, position_mask, *, num_rows, temp_penalty, cooling_factor))]
+    fn py_new(
+        ease_mat: Vec<Vec<f64>>,
+        items_in_collections: Vec<Vec<usize>>,
+        position_mask: Vec<f64>,
+        num_rows: usize,
+        temp_penalty: f64,
+        cooling_factor: f64,
+    ) -> Self {
+        let ranker = EaseRanker::new(ease_mat);
+        let collections = items_in_collections
+            .iter()
+            .map(|items| CollectionDefinition::new(items.to_vec(), false))
+            .collect();
+        PyEaseFPR {
+            ranker,
+            collections,
+            position_mask,
+            num_rows,
+            temp_penalty,
+            cooling_factor,
+        }
+    }
+
+    fn recommend(&self, history: Vec<usize>) -> Vec<(usize, Vec<usize>)> {
+        self.ranker.recommend_page(
+            &history,
+            &self.collections,
+            &self.position_mask,
+            self.num_rows,
+            self.temp_penalty,
+            self.cooling_factor,
+        )
+    }
+}
+
 #[pymodule]
 fn full_page_recommender(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyCollection>()?;
+    m.add_class::<PyEaseFPR>()?;
 
     m.add_function(wrap_pyfunction!(recommend, m)?)?;
 
