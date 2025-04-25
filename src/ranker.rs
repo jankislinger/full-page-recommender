@@ -2,7 +2,7 @@ use crate::collection::Collection;
 use crate::recommender_state::RecommenderState;
 
 pub trait Ranker {
-    type Input;
+    type Input: ?Sized;
     fn rank_items(&self, inputs: &Self::Input) -> Vec<f64>;
 
     fn recommend_page(
@@ -56,7 +56,7 @@ mod tests {
 
     impl Ranker for LinearRanker {
         type Input = ();
-        fn rank_items(&self, input: &Self::Input) -> Vec<f64> {
+        fn rank_items(&self, _: &Self::Input) -> Vec<f64> {
             let n = self.num_items as f64;
             (0..self.num_items).map(|x| x as f64 / n).collect()
         }

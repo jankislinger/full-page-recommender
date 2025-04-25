@@ -1,5 +1,9 @@
 .PHONY: lint test
 
+format:
+	cargo fmt && \
+	uv run ruff format
+
 lint:
 	cargo fmt && \
 	cargo fix --allow-dirty && \

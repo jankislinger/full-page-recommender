@@ -1,4 +1,4 @@
-use crate::ranker::{CollectionDefinition,Ranker};
+use crate::ranker::Ranker;
 
 pub struct EaseRanker {
     mat: Vec<Vec<f64>>,
@@ -13,9 +13,9 @@ impl EaseRanker {
 }
 
 impl Ranker for EaseRanker {
-    type Input = Vec<usize>;
+    type Input = [usize];
 
-    fn rank_items(&self, inputs: &Vec<usize>) -> Vec<f64> {
+    fn rank_items(&self, inputs: &Self::Input) -> Vec<f64> {
         let mut sums = vec![0.0; self.num_cols];
         for &i in inputs {
             for (j, &val) in self.mat[i].iter().enumerate() {
@@ -32,6 +32,7 @@ impl Ranker for EaseRanker {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ranker::CollectionDefinition;
 
     #[test]
     fn test_ease() {
