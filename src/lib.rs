@@ -6,8 +6,8 @@ use pyo3::prelude::*;
 use std::sync::Arc;
 
 mod collection;
-mod ease;
-mod ranker;
+pub mod ease;
+pub mod ranker;
 mod recommender_state;
 
 #[pyclass]
@@ -40,7 +40,7 @@ fn recommend(
     recommender_state.recommend_page(num_rows, temp_penalty, cooling_factor)
 }
 
-struct EaseFPR {
+pub struct EaseFPR {
     ranker: EaseRanker,
     collections: Vec<CollectionDefinition>,
     position_mask: Vec<f64>,
@@ -50,7 +50,7 @@ struct EaseFPR {
 }
 
 impl EaseFPR {
-    fn new(
+    pub fn new(
         ease_mat: Vec<Vec<f64>>,
         items_in_collections: Vec<Vec<usize>>,
         position_mask: Vec<f64>,
@@ -73,7 +73,7 @@ impl EaseFPR {
         }
     }
 
-    fn recommend(&self, history: &[usize]) -> Vec<(usize, Vec<usize>)> {
+    pub fn recommend(&self, history: &[usize]) -> Vec<(usize, Vec<usize>)> {
         self.ranker.recommend_page(
             history,
             &self.collections,
