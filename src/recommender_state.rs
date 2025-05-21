@@ -110,8 +110,8 @@ mod tests {
     fn recommendations_for_one_row() {
         let mut state = RecommenderState::new(
             vec![
-                Collection::new(vec![0.1, 0.2], vec![0, 1], false),
-                Collection::new(vec![0.5, 0.9, 0.2], vec![2, 3, 1], false),
+                Collection::new(&[0.1, 0.2], &[0, 1], false),
+                Collection::new(&[0.5, 0.9, 0.2], &[2, 3, 1], false),
             ],
             vec![0.6, 0.3, 0.1],
         );
@@ -124,11 +124,7 @@ mod tests {
     fn recommend_single_sorted_collection() {
         let coll_items = vec![0, 1, 2];
         let mut state = RecommenderState::new(
-            vec![Collection::new(
-                vec![0.1, 0.9, 0.4],
-                coll_items.clone(),
-                true,
-            )],
+            vec![Collection::new(&[0.1, 0.9, 0.4], &coll_items, true)],
             vec![0.6, 0.3, 0.1],
         );
         let (_, recom_items) = state.emit_recommendation(0.1, 0.0).unwrap();
@@ -139,9 +135,9 @@ mod tests {
     fn recommend_page_with_deduplication() {
         let mut state = RecommenderState::new(
             vec![
-                Collection::new(vec![0.92, 0.91, 0.90], vec![0, 1, 2], false),
-                Collection::new(vec![0.35, 0.31, 0.30], vec![0, 3, 4], false),
-                Collection::new(vec![0.32, 0.31, 0.30], vec![5, 6, 7], false),
+                Collection::new(&[0.92, 0.91, 0.90], &[0, 1, 2], false),
+                Collection::new(&[0.35, 0.31, 0.30], &[0, 3, 4], false),
+                Collection::new(&[0.32, 0.31, 0.30], &[5, 6, 7], false),
             ],
             vec![0.6, 0.3, 0.1],
         );

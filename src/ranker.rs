@@ -34,8 +34,8 @@ impl CollectionDefinition {
 
 impl CollectionDefinition {
     fn as_collection(&self, scores: &[f64]) -> Collection {
-        let scores = self.items.iter().map(|&i| scores[i]).collect();
-        Collection::new(scores, self.items.clone(), self.is_sorted)
+        let scores: Vec<f64> = self.items.iter().map(|&i| scores[i]).collect();
+        Collection::new(&scores, &self.items, self.is_sorted)
     }
 }
 

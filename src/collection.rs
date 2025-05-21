@@ -13,7 +13,7 @@ pub struct Collection {
 }
 
 impl Collection {
-    pub fn new(scores: Vec<f64>, items: Vec<usize>, is_sorted: bool) -> Self {
+    pub fn new(scores: &[f64], items: &[usize], is_sorted: bool) -> Self {
         Self {
             scores: Arc::from(scores),
             items: Arc::from(items),
@@ -121,7 +121,7 @@ mod tests {
 
     #[test]
     fn test_item_selection() {
-        let col = Collection::new(vec![0.3, 0.5, 0.1, 0.9], vec![3, 5, 8, 13], false);
+        let col = Collection::new(&[0.3, 0.5, 0.1, 0.9], &[3, 5, 8, 13], false);
         let items = col.recommend_indices(&[0.0; 14], 2, 0.5);
         assert_eq!(items, vec![13, 5]);
     }
