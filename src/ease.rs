@@ -44,10 +44,10 @@ mod tests {
         ]);
         let inputs = vec![0];
         let collections = vec![
-            CollectionDefinition::new(vec![0, 1], false),
-            CollectionDefinition::new(vec![1, 2], false),
-            CollectionDefinition::new(vec![1, 3], false),
-            CollectionDefinition::new(vec![2, 3], false),
+            CollectionDefinition::new(&[0, 1], false),
+            CollectionDefinition::new(&[1, 2], false),
+            CollectionDefinition::new(&[1, 3], false),
+            CollectionDefinition::new(&[2, 3], false),
         ];
         let position_mask = vec![0.8, 0.2];
 

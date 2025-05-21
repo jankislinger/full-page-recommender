@@ -61,7 +61,7 @@ impl EaseFPR {
         let ranker = EaseRanker::new(ease_mat);
         let collections = items_in_collections
             .iter()
-            .map(|items| CollectionDefinition::new(items.to_vec(), false))
+            .map(|items| CollectionDefinition::new(items, false))
             .collect();
         Self {
             ranker,

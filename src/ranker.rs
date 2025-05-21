@@ -1,5 +1,6 @@
 use crate::collection::Collection;
 use crate::recommender_state::RecommenderState;
+use std::sync::Arc;
 
 pub trait Ranker {
     type Input: ?Sized;
@@ -22,12 +23,13 @@ pub trait Ranker {
 }
 
 pub struct CollectionDefinition {
-    items: Vec<usize>,
+    items: Arc<[usize]>,
     is_sorted: bool,
 }
 
 impl CollectionDefinition {
-    pub fn new(items: Vec<usize>, is_sorted: bool) -> Self {
+    pub fn new(items: &[usize], is_sorted: bool) -> Self {
+        let items = Arc::from(items);
         Self { items, is_sorted }
     }
 }
@@ -66,18 +68,9 @@ mod tests {
     fn test_dummy_ranker() {
         let ranker = LinearRanker { num_items: 10 };
         let collections = vec![
-            CollectionDefinition {
-                items: vec![0, 1, 2, 3],
-                is_sorted: false,
-            },
-            CollectionDefinition {
-                items: vec![5, 6, 7, 8],
-                is_sorted: false,
-            },
-            CollectionDefinition {
-                items: vec![7, 8, 9],
-                is_sorted: false,
-            },
+            CollectionDefinition::new(&[0, 1, 2, 3], false),
+            CollectionDefinition::new(&[5, 6, 7, 8], false),
+            CollectionDefinition::new(&[7, 8, 9], false),
         ];
         let position_mask = vec![0.8, 0.2];
         let recommendations = ranker.recommend_page(&(), &collections, &position_mask, 1, 0.7, 0.7);
