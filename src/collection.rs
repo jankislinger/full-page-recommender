@@ -2,11 +2,12 @@ use core::slice::Iter;
 use serde::Deserialize;
 use std::cmp::Ordering;
 use std::str::FromStr;
+use std::sync::Arc;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Collection {
-    scores: Vec<f64>,
-    items: Vec<usize>,
+    scores: Arc<[f64]>,
+    items: Arc<[usize]>,
     is_sorted: bool,
     is_available: bool,
 }
@@ -14,8 +15,8 @@ pub struct Collection {
 impl Collection {
     pub fn new(scores: Vec<f64>, items: Vec<usize>, is_sorted: bool) -> Self {
         Self {
-            scores,
-            items,
+            scores: Arc::from(scores),
+            items: Arc::from(items),
             is_sorted,
             is_available: true,
         }
@@ -57,7 +58,7 @@ impl Collection {
             .sum()
     }
     pub(crate) fn potential(&self, position_mask: &[f64]) -> f64 {
-        let mut item_scores = self.scores.clone();
+        let mut item_scores = self.scores.to_vec();
         if !self.is_sorted {
             item_scores.sort_by(|a, b| b.partial_cmp(a).unwrap_or(Ordering::Equal))
         }
