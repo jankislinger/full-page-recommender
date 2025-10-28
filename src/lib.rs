@@ -127,5 +127,5 @@ mod full_page_recommender {
     use super::{PyCollection, PyEaseFPR};
 
     #[pymodule_export]
-    use super::{recommend};
+    use super::recommend;
 }
