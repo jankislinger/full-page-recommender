@@ -122,11 +122,10 @@ impl PyEaseFPR {
 }
 
 #[pymodule]
-fn full_page_recommender(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<PyCollection>()?;
-    m.add_class::<PyEaseFPR>()?;
+mod full_page_recommender {
+    #[pymodule_export]
+    use super::{PyCollection, PyEaseFPR};
 
-    m.add_function(wrap_pyfunction!(recommend, m)?)?;
-
-    Ok(())
+    #[pymodule_export]
+    use super::{recommend};
 }
