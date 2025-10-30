@@ -12,7 +12,7 @@ mod recommender_state;
 
 #[pyclass]
 struct PyCollection {
-    inner: Arc<Collection>,
+    inner: Collection,
 }
 
 #[pymethods]
@@ -20,7 +20,7 @@ impl PyCollection {
     #[new]
     #[pyo3(signature = (scores, items, is_sorted=false))]
     fn py_new(scores: Vec<f64>, items: Vec<usize>, is_sorted: bool) -> Self {
-        let inner = Arc::new(Collection::new(&scores, &items, is_sorted));
+        let inner = Collection::new(&scores, &items, is_sorted);
         PyCollection { inner }
     }
 }
@@ -35,8 +35,8 @@ fn recommend(
     cooling_factor: f64,
 ) -> Vec<(usize, Vec<usize>)> {
     // TODO: do it without cloning Collection
-    let collections: Vec<Collection> = collections.iter().map(|c| (*c.inner).clone()).collect();
-    let mut recommender_state = RecommenderState::new(collections, position_mask);
+    let collections: Vec<Collection> = collections.iter().map(|c| (c.inner).clone()).collect();
+    let mut recommender_state = RecommenderState::new(&collections, position_mask);
     recommender_state.recommend_page(num_rows, temp_penalty, cooling_factor)
 }
 

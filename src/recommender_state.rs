@@ -1,8 +1,10 @@
-use crate::collection::Collection;
+use crate::collection::{rev_cmp_float, Collection};
 use std::cmp::Ordering;
+use std::sync::Arc;
 
 pub struct RecommenderState {
-    collections: Vec<Collection>,
+    collections: Arc<[Collection]>,
+    is_available: Vec<bool>,
     max_scores: Vec<f64>,
     position_mask: Vec<f64>,
     indices: Vec<usize>,
@@ -10,21 +12,27 @@ pub struct RecommenderState {
 }
 
 impl RecommenderState {
-    pub fn new(collections: Vec<Collection>, position_mask: Vec<f64>) -> Self {
-        let num_items = guess_num_items(&collections);
-        let mut scored_collections: Vec<(usize, f64, Collection)> = collections
-            .into_iter()
+    pub fn new(collections: &[Collection], position_mask: Vec<f64>) -> Self {
+        let num_items = guess_num_items(collections);
+        let mut scored_collections: Vec<(usize, f64, &Collection)> = collections
+            .iter()
             .enumerate()
             .map(|(i, c)| (i, c.potential(&position_mask), c))
             .collect();
-        scored_collections.sort_by(ord_collection);
+        scored_collections.sort_by(rev_cmp_second_element);
 
         let indices = scored_collections.iter().map(|&(i, _, _)| i).collect();
         let max_scores = scored_collections.iter().map(|&(_, s, _)| s).collect();
-        let collections = scored_collections.into_iter().map(|(_, _, c)| c).collect();
+        let collections: Vec<Collection> = scored_collections
+            .into_iter()
+            .map(|(_, _, c)| c.clone())
+            .collect();
+        let num_collections = collections.len();
+        let collections = collections.into();
 
         Self {
             collections,
+            is_available: vec![true; num_collections],
             max_scores,
             position_mask,
             indices,
@@ -50,10 +58,10 @@ impl RecommenderState {
     ) -> Option<(usize, Vec<usize>)> {
         let i: usize = self.find_best_collection(temp_penalty)?;
         let coll_idx = self.indices[i];
-        let collection = &mut self.collections[i];
+        let collection = &self.collections.as_ref()[i];
         let items =
             collection.recommend_indices(&self.item_temps, self.position_mask.len(), temp_penalty);
-        collection.disable();
+        self.is_available[i] = false;
         self.update_temperatures(&items, cooling_factor);
         Some((coll_idx, items))
     }
@@ -68,7 +76,7 @@ impl RecommenderState {
     fn find_best_collection(&self, temp_penalty: f64) -> Option<usize> {
         let mut best: Option<(usize, f64)> = None;
         for (i, coll) in self.collections.iter().enumerate() {
-            if !coll.is_available() {
+            if !self.is_available[i] {
                 continue;
             }
 
@@ -98,8 +106,8 @@ fn guess_num_items(collections: &[Collection]) -> usize {
         .unwrap_or(0)
 }
 
-fn ord_collection(a: &(usize, f64, Collection), b: &(usize, f64, Collection)) -> Ordering {
-    b.1.partial_cmp(&a.1).unwrap_or(Ordering::Equal)
+fn rev_cmp_second_element<T, U>(a: &(T, f64, U), b: &(T, f64, U)) -> Ordering {
+    rev_cmp_float(&a.1, &b.1)
 }
 
 #[cfg(test)]
@@ -109,7 +117,7 @@ mod tests {
     #[test]
     fn recommendations_for_one_row() {
         let mut state = RecommenderState::new(
-            vec![
+            &vec![
                 Collection::new(&[0.1, 0.2], &[0, 1], false),
                 Collection::new(&[0.5, 0.9, 0.2], &[2, 3, 1], false),
             ],
@@ -124,7 +132,7 @@ mod tests {
     fn recommend_single_sorted_collection() {
         let coll_items = vec![0, 1, 2];
         let mut state = RecommenderState::new(
-            vec![Collection::new(&[0.1, 0.9, 0.4], &coll_items, true)],
+            &vec![Collection::new(&[0.1, 0.9, 0.4], &coll_items, true)],
             vec![0.6, 0.3, 0.1],
         );
         let (_, recom_items) = state.emit_recommendation(0.1, 0.0).unwrap();
@@ -134,7 +142,7 @@ mod tests {
     #[test]
     fn recommend_page_with_deduplication() {
         let mut state = RecommenderState::new(
-            vec![
+            &vec![
                 Collection::new(&[0.92, 0.91, 0.90], &[0, 1, 2], false),
                 Collection::new(&[0.35, 0.31, 0.30], &[0, 3, 4], false),
                 Collection::new(&[0.32, 0.31, 0.30], &[5, 6, 7], false),

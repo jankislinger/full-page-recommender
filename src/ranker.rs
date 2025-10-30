@@ -17,7 +17,7 @@ pub trait Ranker {
     ) -> Vec<(usize, Vec<usize>)> {
         let item_scores = self.rank_items(inputs);
         let collections = score_collections(collections, &item_scores);
-        let mut rs = RecommenderState::new(collections, position_mask.into());
+        let mut rs = RecommenderState::new(&collections, position_mask.into());
         rs.recommend_page(num_rows, temp_penalty, cooling_factor)
     }
 }

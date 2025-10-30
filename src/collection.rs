@@ -9,7 +9,6 @@ pub struct Collection {
     scores: Arc<[f64]>,
     items: Arc<[usize]>,
     is_sorted: bool,
-    is_available: bool,
 }
 
 impl Collection {
@@ -18,20 +17,11 @@ impl Collection {
             scores: Arc::from(scores),
             items: Arc::from(items),
             is_sorted,
-            is_available: true,
         }
     }
 
     pub fn iter_items(&self) -> Iter<usize> {
         self.items.iter()
-    }
-
-    pub fn disable(&mut self) {
-        self.is_available = false;
-    }
-
-    pub fn is_available(&self) -> bool {
-        self.is_available
     }
 
     #[allow(dead_code)]
@@ -49,7 +39,7 @@ impl Collection {
     ) -> f64 {
         let mut item_scores = dedupe_scores(&self.scores, &self.items, item_temps, temp_penalty);
         if !self.is_sorted {
-            item_scores.sort_by(|a, b| b.partial_cmp(a).unwrap_or(Ordering::Equal))
+            item_scores.sort_by(rev_cmp_float)
         }
         item_scores
             .iter()
@@ -57,10 +47,11 @@ impl Collection {
             .map(|(&a, &b)| a * b)
             .sum()
     }
+
     pub(crate) fn potential(&self, position_mask: &[f64]) -> f64 {
         let mut item_scores = self.scores.to_vec();
         if !self.is_sorted {
-            item_scores.sort_by(|a, b| b.partial_cmp(a).unwrap_or(Ordering::Equal))
+            item_scores.sort_by(rev_cmp_float)
         }
         item_scores
             .iter()
@@ -85,7 +76,7 @@ impl Collection {
                 .enumerate()
                 .map(|(i, &x)| (i, x))
                 .collect();
-        item_scores.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap_or(Ordering::Equal));
+        item_scores.sort_by(|(_, a), (_, b)| rev_cmp_float(a, b));
         item_scores
             .iter()
             .take(top_k)
@@ -113,6 +104,10 @@ fn dedupe_scores(
         .zip(items.iter())
         .map(|(&score, &i)| score * temp_penalty.powf(item_temps[i]))
         .collect()
+}
+
+pub(crate) fn rev_cmp_float(a: &f64, b: &f64) -> Ordering {
+    b.partial_cmp(a).expect("Values must be numbers")
 }
 
 #[cfg(test)]
@@ -148,5 +143,19 @@ mod tests {
         json_str
             .parse::<Collection>()
             .expect_err("Invalid string shouldn't be parsed");
+    }
+
+    #[test]
+    fn test_rev_cmp_float() {
+        assert_eq!(rev_cmp_float(&3.0, &1.0), Ordering::Less);
+        assert_eq!(rev_cmp_float(&3.0, &5.0), Ordering::Greater);
+        assert_eq!(rev_cmp_float(&3.0, &f64::NEG_INFINITY), Ordering::Less);
+        assert_eq!(rev_cmp_float(&3.0, &f64::INFINITY), Ordering::Greater);
+    }
+
+    #[test]
+    #[should_panic(expected = "Values must be numbers")]
+    fn test_rev_cmp_float_panic() {
+        rev_cmp_float(&f64::NAN, &1.0);
     }
 }
