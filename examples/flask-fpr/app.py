@@ -1,9 +1,15 @@
 from __future__ import annotations
 
-
 from flask import Flask, render_template
-from markupsafe import Markup
-from flask_fpr.models import Tile, Carousel, Page
+
+from flask_fpr.models import (
+    Carousel,
+    Page,
+    Tile,
+    render_carousel,
+    render_page,
+    render_tile,
+)
 
 app = Flask(__name__)
 
@@ -11,24 +17,6 @@ app = Flask(__name__)
 # -----------------------------
 # Render helpers (Jinja filters)
 # -----------------------------
-
-
-def render_tile(tile: Tile) -> Markup:
-    """Render a single tile using tile.html."""
-    html = render_template("tile.html", tile=tile)
-    return Markup(html)
-
-
-def render_carousel(carousel: Carousel) -> Markup:
-    """Render a carousel using carousel.html."""
-    html = render_template("carousel.html", carousel=carousel)
-    return Markup(html)
-
-
-def render_page(page: Page) -> Markup:
-    """Render a page using page.html."""
-    html = render_template("page.html", page=page)
-    return Markup(html)
 
 
 # Register filters so you can do {{ tile|render_tile }} etc.
@@ -50,8 +38,6 @@ def build_demo_page() -> Page:
         subtitle="New episodes weekly",
         image_url="https://images.pexels.com/photos/799137/pexels-photo-799137.jpeg",
         badge="Exclusive",
-        is_new=True,
-        is_hd=True,
     )
 
     continue_tiles = [
@@ -60,15 +46,12 @@ def build_demo_page() -> Page:
             title="Space Rangers",
             subtitle="S1 · E4",
             image_url="https://images.pexels.com/photos/799443/pexels-photo-799443.jpeg",
-            progress_pct=64,
-            is_hd=True,
         ),
         Tile(
             id="cont-2",
             title="Cooking Chaos",
             subtitle="S2 · E9",
             image_url="https://images.pexels.com/photos/765835/pexels-photo-765835.jpeg",
-            progress_pct=32,
         ),
     ]
 
@@ -110,9 +93,7 @@ def build_demo_page() -> Page:
     ]
 
     carousels = [
-        Carousel(
-            id="continue-watching", title="Continue Watching", tiles=continue_tiles
-        ),
+        Carousel(id="continue-watching", title="Continue Watching", tiles=continue_tiles),
         Carousel(id="trending-now", title="Trending Now", tiles=trending_tiles),
         Carousel(id="long-tiles", title="Scrollable", tiles=long_tiles),
     ]
