@@ -31,21 +31,12 @@ app.add_template_filter(render_page, name="render_page")
 
 
 def build_demo_page() -> Page:
-    # In real app, this would come from DB / recommender / API
-    hero_tile = Tile(
-        id="hero-1",
-        title="Featured Show: Night City Stories",
-        subtitle="New episodes weekly",
-        image_url="https://images.pexels.com/photos/799137/pexels-photo-799137.jpeg",
-        badge="Exclusive",
-    )
-
     continue_tiles = [
         Tile(
             id="cont-1",
-            title="Space Rangers",
+            title="Stranger Things",
             subtitle="S1 · E4",
-            image_url="https://images.pexels.com/photos/799443/pexels-photo-799443.jpeg",
+            image_url="https://media.themoviedb.org/t/p/w220_and_h330_face/uOOtwVbSr4QDjAGIifLDwpb2Pdl.jpg",
         ),
         Tile(
             id="cont-2",
@@ -62,7 +53,6 @@ def build_demo_page() -> Page:
             subtitle="Movie · 2h 10m",
             image_url="https://images.pexels.com/photos/799443/pexels-photo-799443.jpeg",
             badge="Top 10",
-            is_hd=True,
         ),
         Tile(
             id="trend-2",
@@ -76,7 +66,6 @@ def build_demo_page() -> Page:
             title="Goal Rush",
             subtitle="Sports · Highlights",
             image_url="https://images.pexels.com/photos/799443/pexels-photo-799443.jpeg",
-            is_hd=True,
         ),
     ]
 
@@ -87,7 +76,6 @@ def build_demo_page() -> Page:
             subtitle="Movie · 2h 10m",
             image_url="https://images.pexels.com/photos/799443/pexels-photo-799443.jpeg",
             badge=f"Top {i}",
-            is_hd=True,
         )
         for i in range(24)
     ]
@@ -98,7 +86,7 @@ def build_demo_page() -> Page:
         Carousel(id="long-tiles", title="Scrollable", tiles=long_tiles),
     ]
 
-    return Page(title="MyStream", hero=hero_tile, carousels=carousels)
+    return Page(carousels=carousels)
 
 
 # -----------------------------
