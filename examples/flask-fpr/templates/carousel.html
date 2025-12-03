@@ -1,0 +1,73 @@
+<div class="space-y-3">
+  <div class="flex items-center justify-between px-1">
+    <h2 class="text-lg sm:text-xl font-semibold">
+      {{ carousel.title }}
+    </h2>
+    <!---
+    <button class="text-xs text-zinc-400 hover:text-zinc-200">
+      View all
+    </button>
+    --->
+  </div>
+
+  <div class="relative">
+
+    <!-- LEFT ARROW -->
+    <button
+      class="absolute left-0 top-1/2 -translate-y-1/2 z-10
+             bg-zinc-900/70 text-white px-3 py-6 rounded-r-xl
+             hidden md:flex items-center justify-center
+             hover:bg-zinc-900/90"
+      onclick="scrollCarousel('{{ carousel.id }}', -1)"
+    >
+      ‹
+    </button>
+
+    <!-- SCROLLER -->
+    <div
+      id="carousel-{{ carousel.id }}"
+      class="flex gap-4 overflow-x-auto pb-2 pt-1 scrollbar-thin
+             scroll-smooth snap-x snap-mandatory"
+    >
+      {% for tile in carousel.tiles %}
+        <div class="snap-start shrink-0 w-40 sm:w-44 md:w-52">
+          {{ tile|render_tile }}
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- RIGHT ARROW -->
+    <button
+      class="absolute right-0 top-1/2 -translate-y-1/2 z-10
+             bg-zinc-900/70 text-white px-3 py-6 rounded-l-xl
+             hidden md:flex items-center justify-center
+             hover:bg-zinc-900/90"
+      onclick="scrollCarousel('{{ carousel.id }}', 1)"
+    >
+      ›
+    </button>
+  </div>
+</div>
+
+<!-- JS to compute scroll step dynamically -->
+<script>
+function scrollCarousel(id, direction) {
+  const scroller = document.getElementById("carousel-" + id);
+  if (!scroller) return;
+
+  // First tile in carousel – they all have same width
+  const firstTile = scroller.querySelector("div");
+  if (!firstTile) return;
+
+  const tileWidth = firstTile.offsetWidth;
+  const gap = parseInt(getComputedStyle(scroller).columnGap || 16);
+  const totalTileWidth = tileWidth + gap;
+
+  // How many full tiles fit in viewport?
+  const visibleTiles = Math.floor(scroller.clientWidth / totalTileWidth);
+
+  const scrollAmount = visibleTiles * totalTileWidth * direction;
+
+  scroller.scrollBy({ left: scrollAmount, behavior: "smooth" });
+}
+</script>

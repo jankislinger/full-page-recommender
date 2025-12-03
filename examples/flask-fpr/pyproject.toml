@@ -1,0 +1,19 @@
+[project]
+name = "flask-fpr"
+version = "0.1.0"
+description = "Demo of Full-Page Recommender"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "flask>=3.1.2",
+    "pydantic>=2.12.5",
+]
+
+[build-system]
+requires = ["uv_build>=0.8.5,<0.9.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.11.2",
+]

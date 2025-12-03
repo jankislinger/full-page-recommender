@@ -1,0 +1,50 @@
+<article
+  class="group relative rounded-xl overflow-hidden bg-zinc-900/80 border border-zinc-800/80 hover:border-zinc-500/80 transition-shadow shadow-md hover:shadow-xl hover:shadow-black/50"
+>
+  <div class="relative aspect-[2/3] overflow-hidden">
+    <img
+      src="{{ tile.image_url }}"
+      alt="{{ tile.title }}"
+      class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+    />
+    <!-- Gradient overlay -->
+    <div
+      class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/0"
+    ></div>
+
+    <!-- Badges -->
+    <div class="absolute top-2 left-2 flex flex-col gap-1">
+      {% if tile.badge %}
+      <span
+        class="inline-flex items-center rounded-full bg-sky-500/90 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-white shadow"
+        >{{ tile.badge }}</span
+      >
+      {% endif %}
+    </div>
+
+    <!-- Play icon on hover -->
+    <div
+      class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+    >
+      <div
+        class="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-zinc-900 shadow-lg"
+      >
+        ▶
+      </div>
+    </div>
+  </div>
+
+  <!-- Text area -->
+  <div class="p-2.5 space-y-1">
+    <h3
+      class="text-sm font-semibold line-clamp-2 leading-snug text-zinc-50 group-hover:text-white"
+    >
+      {{ tile.title }}
+    </h3>
+    {% if tile.subtitle %}
+    <p class="text-[0.7rem] text-zinc-400 line-clamp-1">
+      {{ tile.subtitle }}
+    </p>
+    {% endif %}
+  </div>
+</article>

@@ -32,4 +32,9 @@ python-source = "python"
 [tool.pytest.ini_options]
 addopts = "--doctest-modules"
 
+[tool.uv.workspace]
+members = [
+    "examples/flask-fpr",
+]
+
 
