@@ -1,6 +1,5 @@
 import abc
 import random
-from collections.abc import Iterable
 from pathlib import Path
 
 import polars as pl
@@ -22,11 +21,15 @@ class BaseEngine(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def get_carousel(self, index: int, content_indices: list[int]) -> Carousel:
+        pass
+
+    @abc.abstractmethod
     def score_items(self, user_id: str) -> list[float]:
         pass
 
     @abc.abstractmethod
-    def get_collections(self, user_id: str) -> list[tuple[str, list[int]]]:
+    def get_collections(self, user_id: str) -> list[tuple[list[int], float]]:
         pass
 
 
@@ -47,66 +50,59 @@ class DummyEngine(BaseEngine):
         items = scan_items().collect()
         tiles_catalog = (Tile(**row) for row in items.iter_rows(named=True))
         self.tiles_catalog = {t.id: t for t in tiles_catalog}
+
+        self.carousels: list[tuple[str, list[int], float]] = []
+        rows_iterable = self.collections_df.select("label", "score", "item_ids").iter_rows()
+        for label, score, item_ids in rows_iterable:
+            label = capitalize_title(label)
+            item_ids = sorted(i for i in set(item_ids) if i in self.tiles_catalog)
+            if len(item_ids) < NUM_TILES:
+                continue
+            self.carousels.append((label, item_ids, score))
+
         self._frozen_scores: dict[str, list[float]] = {}
 
-    def get_tile(self, i: int) -> Tile:
-        return self.tiles_catalog[i]
+    def get_tile(self, index: int) -> Tile:
+        return self.tiles_catalog[index]
+
+    def get_carousel(self, index: int, content_indices: list[int]) -> Carousel:
+        return Carousel(
+            id=f"carousel-{index:03d}",
+            title=self.carousels[index][0],
+            tiles=[self.get_tile(i) for i in content_indices],
+        )
 
     def score_items(self, user_id: str) -> list[float]:
         if user_id not in self._frozen_scores:
-            print(max(self.tiles_catalog))
-            self._frozen_scores[user_id] = [
-                random.random() for _ in range(max(self.tiles_catalog) + 1)
-            ]
+            num_items_cap = max(self.tiles_catalog) + 1
+            self._frozen_scores[user_id] = [random.random() for _ in range(num_items_cap)]
         return self._frozen_scores[user_id]
 
-    def get_collections(self, user_id: str) -> list[tuple[str, list[int]]]:
-        return list(self.yield_collections(user_id))
-
-    def yield_collections(self, user_id: str) -> Iterable[tuple[str, list[int]]]:
-        _ = user_id  # not used
-        rows_iterable = self.collections_df.select("label", "score", "item_ids").iter_rows()
-        for label, _score, item_ids in rows_iterable:
-            yield label, item_ids
+    def get_collections(self, user_id: str) -> list[tuple[list[int], float]]:
+        return [(item_ids, score) for label, item_ids, score in self.carousels]
 
 
-def build_page(engine: BaseEngine) -> Page:
-    user_id = "dummy"
+def build_page(engine: BaseEngine, user_id: str = "dummy") -> Page:
     scores = engine.score_items(user_id)
+    source_collections = engine.get_collections(user_id)
+
     collections: list[PyCollection] = []
-    labels: list[str] = []
-    for label, item_ids in engine.get_collections(user_id):
-        item_ids = sorted(i for i in set(item_ids) if i in engine.tiles_catalog)
-        if len(item_ids) < NUM_TILES:
-            continue
-        print(item_ids)
-        c = PyCollection([scores[i] for i in item_ids], item_ids, is_sorted=False)
+    for item_ids, score in source_collections:
+        c = PyCollection([score * scores[i] for i in item_ids], item_ids, is_sorted=False)
         collections.append(c)
-        labels.append(label)
-    print("num collections:", len(collections))
 
     recommendations = recommend(collections, pos_mask(NUM_TILES), num_rows=NUM_ROWS)
-
-    carousels = []
-    for i, item_ids in recommendations:
-        tiles = [engine.get_tile(j) for j in item_ids]
-        c = Carousel(id=f"carousel-{i:03d}", title=capitalize_title(labels[i]), tiles=tiles)
-        carousels.append(c)
-
+    carousels = [engine.get_carousel(i, item_ids) for i, item_ids in recommendations]
     return Page(carousels=carousels)
 
 
 def scan_items() -> pl.LazyFrame:
     items = pl.scan_parquet(DATA_DIR / "dataset" / "items.parquet")
-    return (
-        items
-        # .filter(pl.col("image_url").is_not_null())
-        .select(
-            id=pl.col("item_id"),
-            title="title",
-            subtitle=pl.col("genres").list.join(", "),
-            image_url=pl.col("image_url").fill_null(""),
-        )
+    return items.select(
+        id=pl.col("item_id"),
+        title="title",
+        subtitle=pl.col("genres").list.join(", "),
+        image_url=pl.col("image_url").fill_null(""),
     )
 
 
