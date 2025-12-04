@@ -10,7 +10,7 @@ from flask_fpr.models import (
     render_page,
     render_tile,
 )
-from flask_fpr.page_builder import DummyEngine, build_page
+from flask_fpr.engine import DummyEngine, build_page
 
 app = Flask(__name__)
 engine = DummyEngine()
