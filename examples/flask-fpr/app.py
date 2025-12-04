@@ -10,8 +10,27 @@ from flask_fpr.models import (
     render_page,
     render_tile,
 )
+from flask_fpr.page_builder import DummyEngine, build_page
 
 app = Flask(__name__)
+engine = DummyEngine()
+
+
+# -----------------------------
+# Routes
+# -----------------------------
+
+
+@app.route("/", methods=["GET"])
+def index():
+    page = build_page(engine)
+    return render_template("page.html", page=page)
+
+
+@app.route("/demo", methods=["GET"])
+def demo():
+    page = build_demo_page()
+    return render_template("page.html", page=page)
 
 
 # -----------------------------
@@ -19,7 +38,6 @@ app = Flask(__name__)
 # -----------------------------
 
 
-# Register filters so you can do {{ tile|render_tile }} etc.
 app.add_template_filter(render_tile, name="render_tile")
 app.add_template_filter(render_carousel, name="render_carousel")
 app.add_template_filter(render_page, name="render_page")
@@ -87,17 +105,6 @@ def build_demo_page() -> Page:
     ]
 
     return Page(carousels=carousels)
-
-
-# -----------------------------
-# Routes
-# -----------------------------
-
-
-@app.route("/", methods=["GET"])
-def index():
-    page = build_demo_page()
-    return render_template("page.html", page=page)
 
 
 if __name__ == "__main__":

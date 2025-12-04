@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class Tile(BaseModel):
-    id: str
+    id: str | int
     title: str
     subtitle: str | None = None
     image_url: str
@@ -12,7 +12,7 @@ class Tile(BaseModel):
 
 
 class Carousel(BaseModel):
-    id: str
+    id: str | int
     title: str
     tiles: list[Tile]
 
