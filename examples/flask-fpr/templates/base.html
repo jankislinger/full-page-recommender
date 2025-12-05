@@ -11,18 +11,32 @@
 
 
     <style>
-      /* Nice scrollbar for horizontal carousels */
-      .scrollbar-thin::-webkit-scrollbar {
-        height: 6px;
-      }
-      .scrollbar-thin::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .scrollbar-thin::-webkit-scrollbar-thumb {
-        background-color: rgba(148, 163, 184, 0.7);
-        border-radius: 9999px;
-      }
+        /* Nice scrollbar for horizontal carousels */
+        .scrollbar-thin::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background-color: rgba(148, 163, 184, 0.7);
+            border-radius: 9999px;
+        }
+
+        /* Completely hide horizontal scrollbars across all browsers */
+        .hide-scrollbar {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE/Edge */
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none; /* Chrome/Safari */
+        }
+
     </style>
+
   </head>
   <body class="h-full bg-zinc-950 text-zinc-100">
     <div class="min-h-screen flex flex-col">

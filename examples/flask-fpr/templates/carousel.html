@@ -3,22 +3,22 @@
     <h2 class="text-lg sm:text-xl font-semibold">
       {{ carousel.title }}
     </h2>
-    <!---
-    <button class="text-xs text-zinc-400 hover:text-zinc-200">
-      View all
-    </button>
-    --->
   </div>
 
   <div class="relative">
 
     <!-- LEFT ARROW -->
     <button
+      id="carousel-left-{{ carousel.id }}"
+      type="button"
+      data-carousel-id="{{ carousel.id }}"
       class="absolute left-0 top-1/2 -translate-y-1/2 z-10
-             bg-zinc-900/70 text-white px-3 py-6 rounded-r-xl
-             hidden md:flex items-center justify-center
-             hover:bg-zinc-900/90"
-      onclick="scrollCarousel('{{ carousel.id }}', -1)"
+             flex h-9 w-9 items-center justify-center rounded-full
+             bg-zinc-900/80 text-white text-lg
+             hover:bg-zinc-800/90
+             disabled:bg-zinc-800/50 disabled:text-zinc-500
+             disabled:hover:bg-zinc-800/50 disabled:cursor-default"
+      onclick="scrollCarousel('{{ carousel.id }}', -1, event)"
     >
       ‹
     </button>
@@ -26,8 +26,9 @@
     <!-- SCROLLER -->
     <div
       id="carousel-{{ carousel.id }}"
-      class="flex gap-4 overflow-x-auto pb-2 pt-1 scrollbar-thin
-             scroll-smooth snap-x snap-mandatory"
+      data-carousel-id="{{ carousel.id }}"
+      class="carousel-scroller flex gap-4 overflow-x-auto pb-2 pt-1
+             scroll-smooth snap-x snap-mandatory hide-scrollbar"
     >
       {% for tile in carousel.tiles %}
         <div class="snap-start shrink-0 w-40 sm:w-44 md:w-52">
@@ -38,11 +39,16 @@
 
     <!-- RIGHT ARROW -->
     <button
+      id="carousel-right-{{ carousel.id }}"
+      type="button"
+      data-carousel-id="{{ carousel.id }}"
       class="absolute right-0 top-1/2 -translate-y-1/2 z-10
-             bg-zinc-900/70 text-white px-3 py-6 rounded-l-xl
-             hidden md:flex items-center justify-center
-             hover:bg-zinc-900/90"
-      onclick="scrollCarousel('{{ carousel.id }}', 1)"
+             flex h-9 w-9 items-center justify-center rounded-full
+             bg-zinc-900/80 text-white text-lg
+             hover:bg-zinc-800/90
+             disabled:bg-zinc-800/50 disabled:text-zinc-500
+             disabled:hover:bg-zinc-800/50 disabled:cursor-default"
+      onclick="scrollCarousel('{{ carousel.id }}', 1, event)"
     >
       ›
     </button>
@@ -51,23 +57,69 @@
 
 <!-- JS to compute scroll step dynamically -->
 <script>
-function scrollCarousel(id, direction) {
+function scrollCarousel(id, direction, evt) {
+  // If called from a button, respect disabled state
+  if (evt && evt.currentTarget && evt.currentTarget.disabled) {
+    return;
+  }
+
   const scroller = document.getElementById("carousel-" + id);
   if (!scroller) return;
 
-  // First tile in carousel – they all have same width
   const firstTile = scroller.querySelector("div");
   if (!firstTile) return;
 
   const tileWidth = firstTile.offsetWidth;
-  const gap = parseInt(getComputedStyle(scroller).columnGap || 16);
+  const gap = parseInt(getComputedStyle(scroller).columnGap || 16, 10);
   const totalTileWidth = tileWidth + gap;
 
-  // How many full tiles fit in viewport?
-  const visibleTiles = Math.floor(scroller.clientWidth / totalTileWidth);
-
+  const visibleTiles = Math.floor(scroller.clientWidth / totalTileWidth) || 1;
   const scrollAmount = visibleTiles * totalTileWidth * direction;
 
   scroller.scrollBy({ left: scrollAmount, behavior: "smooth" });
 }
+
+function setArrowDisabled(btn, disabled) {
+  if (!btn) return;
+  btn.disabled = disabled;
+}
+
+function updateCarouselButtons(id) {
+  const scroller = document.getElementById("carousel-" + id);
+  const leftBtn  = document.getElementById("carousel-left-" + id);
+  const rightBtn = document.getElementById("carousel-right-" + id);
+
+  if (!scroller || !leftBtn || !rightBtn) return;
+
+  const maxScroll = Math.max(scroller.scrollWidth - scroller.clientWidth, 0);
+
+  // Nothing to scroll → keep arrows but disable both
+  if (maxScroll === 0) {
+    setArrowDisabled(leftBtn, true);
+    setArrowDisabled(rightBtn, true);
+    return;
+  }
+
+  const atStart = scroller.scrollLeft <= 1;
+  const atEnd   = scroller.scrollLeft >= maxScroll - 1;
+
+  setArrowDisabled(leftBtn, atStart);
+  setArrowDisabled(rightBtn, atEnd);
+}
+
+function initCarousels() {
+  document.querySelectorAll(".carousel-scroller").forEach(scroller => {
+    const id = scroller.dataset.carouselId;
+    if (!id) return;
+
+    // Initial state
+    updateCarouselButtons(id);
+
+    // Keep arrows in sync while scrolling
+    scroller.addEventListener("scroll", () => updateCarouselButtons(id));
+  });
+}
+
+window.addEventListener("load", initCarousels);
+window.addEventListener("resize", initCarousels);
 </script>
