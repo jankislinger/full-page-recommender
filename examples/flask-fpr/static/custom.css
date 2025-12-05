@@ -1,0 +1,9 @@
+/* Completely hide horizontal scrollbars across all browsers */
+.hide-scrollbar {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
