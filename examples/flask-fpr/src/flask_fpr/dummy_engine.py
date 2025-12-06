@@ -37,8 +37,6 @@ class DummyEngine(BaseEngine):
                 continue
             self.carousels.append((label, item_ids, score))
 
-        self._frozen_scores: dict[str, list[float]] = {}
-
     def get_tile(self, index: int) -> Tile:
         return self.tiles_catalog[index]
 
@@ -50,10 +48,9 @@ class DummyEngine(BaseEngine):
         )
 
     def score_items(self, user_id: str) -> list[float]:
-        if user_id not in self._frozen_scores:
-            num_items_cap = max(self.tiles_catalog) + 1
-            self._frozen_scores[user_id] = [random.random() for _ in range(num_items_cap)]
-        return self._frozen_scores[user_id]
+        random.seed(user_id)
+        num_items_cap = max(self.tiles_catalog) + 1
+        return [random.random() for _ in range(num_items_cap)]
 
     def get_collections(self, user_id: str) -> list[tuple[list[int], float]]:
         return [(item_ids, score) for label, item_ids, score in self.carousels]

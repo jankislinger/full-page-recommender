@@ -22,9 +22,10 @@ engine = DummyEngine()
 # -----------------------------
 
 
-@app.route("/", methods=["GET"])
-def index():
-    page = build_page(engine)
+@app.route("/user/<string:user_id>", methods=["GET"])
+@app.route("/", methods=["GET"], defaults={"user_id": "dummy"})
+def index(user_id: str):
+    page = build_page(engine, user_id)
     return render_template("page.html", page=page)
 
 

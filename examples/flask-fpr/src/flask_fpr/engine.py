@@ -31,7 +31,7 @@ class BaseEngine(abc.ABC):
         pass
 
 
-def build_page(engine: BaseEngine, user_id: str = "dummy") -> Page:
+def build_page(engine: BaseEngine, user_id: str) -> Page:
     scores = engine.score_items(user_id)
     source_collections = engine.get_collections(user_id)
 
