@@ -9,7 +9,7 @@ DATA_DIR = Path(__file__).parents[2] / "data"
 assert DATA_DIR.is_dir()
 
 
-NUM_TILES = 15
+NUM_TILES = 24
 NUM_ROWS = 20
 
 

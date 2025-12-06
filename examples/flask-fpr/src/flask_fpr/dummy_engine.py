@@ -60,12 +60,15 @@ class DummyEngine(BaseEngine):
 
 
 def scan_items() -> pl.LazyFrame:
-    items = pl.scan_parquet(DATA_DIR / "dataset" / "items.parquet")
-    return items.select(
-        id=pl.col("item_id"),
-        title="title",
-        subtitle=pl.col("genres").list.join(", "),
-        image_url=pl.col("image_url").fill_null(""),
+    return (
+        pl.scan_parquet(DATA_DIR / "dataset" / "items.parquet")
+        .filter(pl.col("image_url").is_not_null())
+        .select(
+            id=pl.col("item_id"),
+            title="title",
+            subtitle=pl.col("genres").list.join(", "),
+            image_url=pl.col("image_url"),
+        )
     )
 
 
