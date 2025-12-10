@@ -25,14 +25,14 @@ engine = EaseEngine()
 
 
 @app.route("/user/<string:user_id>", methods=["GET"])
-@app.route("/", methods=["GET"], defaults={"user_id": "dummy"})
+@app.route("/", methods=["GET"], defaults={"user_id": 200948})
 def index(user_id: str):
     page = build_page(engine, user_id)
     return render_template("page.html", page=page)
 
 
 @app.route("/users", methods=["GET"])
-def demo():
+def users():
     import polars as pl
 
     sampled_users = engine.interactions["user_id"].sample(10, shuffle=True)
