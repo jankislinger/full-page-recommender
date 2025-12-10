@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from flask import Flask, render_template
 
-from flask_fpr.dummy_engine import DummyEngine
+from flask_fpr.ease_engine import EaseEngine
 from flask_fpr.engine import build_page
 from flask_fpr.models import (
     Carousel,
@@ -14,7 +14,8 @@ from flask_fpr.models import (
 )
 
 app = Flask(__name__)
-engine = DummyEngine()
+# _engine = DummyEngine()
+engine = EaseEngine()
 
 
 # -----------------------------
