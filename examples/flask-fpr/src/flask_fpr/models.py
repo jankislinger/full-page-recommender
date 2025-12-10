@@ -15,6 +15,8 @@ class Carousel(BaseModel):
     id: str | int
     title: str
     tiles: list[Tile]
+    link_url: str | None = None
+    link_text: str = "View more..."
 
 
 class Page(BaseModel):

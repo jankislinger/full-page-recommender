@@ -1,3 +1,4 @@
+import os
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
@@ -16,6 +17,9 @@ ITEMS_PATH = MOVIELENS_ROOT / "dataset" / "items.parquet"
 INTERACTIONS_PATH = MOVIELENS_ROOT / "generated" / "interactions.parquet"
 
 
+DEV = os.environ.get("DEVELOPMENT", "f") == "true"
+
+
 class EaseEngine(BaseEngine):
     def __init__(self):
         self.ease_mat = np.load(EASE_PATH)
@@ -26,12 +30,12 @@ class EaseEngine(BaseEngine):
 
         item_tiles = self.items.select(
             id=pl.col("item_id"),
-            title=pl.col("title"),
+            title=pl.col("title_tmdb"),
             subtitle=pl.col("genres_tmdb").list.join(", "),
             image_url=pl.col("image_url"),
         )
 
-        self.tiles = [Tile(**row) for row in item_tiles.iter_rows(named=True)]
+        self.tiles = [tile_from_row(row) for row in item_tiles.iter_rows(named=True)]
 
     def get_tile(self, index: int) -> Tile:
         return self.tiles[index]
@@ -50,10 +54,26 @@ class EaseEngine(BaseEngine):
         watched_indices = interactions["index"].to_numpy()
         scores = np.sum(self.ease_mat[watched_indices, :], axis=0)
         scores[watched_indices] = 0.0
+
+        if DEV:
+            print("\nBest items:")
+            for i in np.argsort(-scores)[:3]:
+                tile = self.get_tile(i)
+                print(f"id={tile.id:<7} {tile.title}")
+            print()
+
         return list(scores)
 
     def get_collections(self, user_id: str) -> list[tuple[list[int], float]]:
         return [(item_ids, score) for label, item_ids, score in self.collections]
+
+
+
+def tile_from_row(row: dict) -> Tile:
+    return Tile(
+        **row,
+        badge=str(row["id"]) if DEV else None,
+    )
 
 
 PREPS = {"and", "the", "on", "or"}
@@ -66,6 +86,8 @@ def capitalize_title(s: str) -> str:
 def _cap(x: str, is_in_middle: bool) -> str:
     if is_in_middle and x in PREPS:
         return x
+    if x.startswith("(") and x.endswith(")") and len(x) <= 6:
+        return x.upper()
     return x.capitalize()
 
 

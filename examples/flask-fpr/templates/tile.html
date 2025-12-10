@@ -1,11 +1,11 @@
 <article
-  class="group relative rounded-xl overflow-hidden bg-zinc-900/80 border border-zinc-800/80 hover:border-zinc-500/80 transition-shadow shadow-md hover:shadow-xl hover:shadow-black/50"
+  class="group/tile relative rounded-xl overflow-hidden bg-zinc-900/80 border border-zinc-800/80 hover:border-zinc-500/80 transition-shadow shadow-md hover:shadow-xl hover:shadow-black/50"
 >
   <div class="relative aspect-[2/3] overflow-hidden">
     <img
       src="{{ tile.image_url }}"
       alt="{{ tile.title }}"
-      class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+      class="h-full w-full object-cover transition-transform duration-300 group-hover/tile:scale-105"
     />
     <!-- Gradient overlay -->
     <div
@@ -25,7 +25,7 @@
 
   <!-- Text area -->
   <div class="p-2.5 space-y-1 min-h-[5.5rem]">
-  <h3 class="text-sm font-semibold leading-snug text-zinc-50 group-hover:text-white line-clamp-2">
+  <h3 class="text-sm font-semibold leading-snug text-zinc-50 group-hover/tile:text-white line-clamp-2">
       {{ tile.title }}
     </h3>
     {% if tile.subtitle %}

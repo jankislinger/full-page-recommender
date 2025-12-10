@@ -1,11 +1,24 @@
-<div class="space-y-3">
+<div class="space-y-3 group/carousel">
   <div class="flex items-center justify-between px-1">
-    <h2 class="text-lg sm:text-xl font-semibold">
-      {{ carousel.title }}
-    </h2>
+    <div class="flex items-center gap-3">
+      <h2 class="text-lg sm:text-xl font-semibold">
+        {{ carousel.title }}
+      </h2>
+
+      {% if carousel.link_url %}
+        <a
+          href="{{ carousel.link_url }}"
+          class="text-xs text-zinc-400 opacity-0 mx-4
+                 group-hover/carousel:opacity-100 transition-opacity
+                 hover:text-white"
+        >
+          {{ carousel.link_text or "View more..." }}
+        </a>
+      {% endif %}
+    </div>
   </div>
 
-  <div class="relative">
+  <div class="relative group">
 
     <!-- LEFT ARROW -->
     <button
