@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 from flask import Flask, render_template
 
 from flask_fpr.ease_engine import EaseEngine
@@ -7,7 +9,6 @@ from flask_fpr.engine import build_page
 from flask_fpr.models import (
     Carousel,
     Page,
-    Tile,
     render_carousel,
     render_page,
     render_tile,
@@ -30,9 +31,21 @@ def index(user_id: str):
     return render_template("page.html", page=page)
 
 
-@app.route("/demo", methods=["GET"])
+@app.route("/users", methods=["GET"])
 def demo():
-    page = build_demo_page()
+    import polars as pl
+
+    sampled_users = engine.interactions["user_id"].sample(10, shuffle=True)
+
+    data: pl.DataFrame = (
+        engine.interactions.lazy()
+        .filter(pl.col("user_id").is_in(sampled_users))
+        .join(engine.items.lazy(), on="item_id")
+        .group_by("user_id")
+        .agg(pl.col("index").sample(fraction=1.0, shuffle=True))
+        .collect()
+    )
+    page = users_history_page(data.iter_rows(named=False))
     return render_template("page.html", page=page)
 
 
@@ -51,61 +64,13 @@ app.add_template_filter(render_page, name="render_page")
 # -----------------------------
 
 
-def build_demo_page() -> Page:
-    continue_tiles = [
-        Tile(
-            id="cont-1",
-            title="Stranger Things",
-            subtitle="S1 · E4",
-            image_url="https://media.themoviedb.org/t/p/w220_and_h330_face/uOOtwVbSr4QDjAGIifLDwpb2Pdl.jpg",
-        ),
-        Tile(
-            id="cont-2",
-            title="Cooking Chaos",
-            subtitle="S2 · E9",
-            image_url="https://images.pexels.com/photos/765835/pexels-photo-765835.jpeg",
-        ),
-    ]
+def users_history_page(inputs: Iterator[tuple[int, list[int]]]) -> Page:
+    carousels = []
 
-    trending_tiles = [
-        Tile(
-            id="trend-1",
-            title="Cyber Heist",
-            subtitle="Movie · 2h 10m",
-            image_url="https://images.pexels.com/photos/799443/pexels-photo-799443.jpeg",
-            badge="Top 10",
-        ),
-        Tile(
-            id="trend-2",
-            title="Love in Prague",
-            subtitle="Movie · 1h 45m",
-            image_url="https://images.pexels.com/photos/799443/pexels-photo-799443.jpeg",
-            badge="Popular",
-        ),
-        Tile(
-            id="trend-3",
-            title="Goal Rush",
-            subtitle="Sports · Highlights",
-            image_url="https://images.pexels.com/photos/799443/pexels-photo-799443.jpeg",
-        ),
-    ]
-
-    long_tiles = [
-        Tile(
-            id="trend-1",
-            title="Cyber Heist",
-            subtitle="Movie · 2h 10m",
-            image_url="https://images.pexels.com/photos/799443/pexels-photo-799443.jpeg",
-            badge=f"Top {i}",
-        )
-        for i in range(24)
-    ]
-
-    carousels = [
-        Carousel(id="continue-watching", title="Continue Watching", tiles=continue_tiles),
-        Carousel(id="trending-now", title="Trending Now", tiles=trending_tiles),
-        Carousel(id="long-tiles", title="Scrollable", tiles=long_tiles),
-    ]
+    for user_id, item_indices in inputs:
+        tiles = [engine.get_tile(i) for i in item_indices]
+        c = Carousel(id=f"user-history-{user_id}", title=f"User {user_id}", tiles=tiles)
+        carousels.append(c)
 
     return Page(carousels=carousels)
 
