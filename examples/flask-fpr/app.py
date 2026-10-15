@@ -5,7 +5,7 @@ from collections.abc import Iterator
 from flask import Flask, render_template, url_for
 
 from flask_fpr.ease_engine import EaseEngine
-from flask_fpr.engine import build_page, NUM_TILES
+from flask_fpr.engine import NUM_TILES, build_page
 from flask_fpr.models import (
     Carousel,
     Page,
@@ -43,7 +43,7 @@ def users():
         .join(engine.items.lazy(), on="item_id")
         .group_by("user_id")
         .agg(pl.col("index").sample(fraction=1.0, shuffle=True))
-        .with_columns(pl.col("index").list.head(3*NUM_TILES))
+        .with_columns(pl.col("index").list.head(3 * NUM_TILES))
         .collect()
     )
     page = users_history_page(data.iter_rows(named=False))

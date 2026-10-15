@@ -1,5 +1,7 @@
+import math
 import os
 from collections.abc import Callable, Iterable
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -13,16 +15,22 @@ assert DATA_DIR.is_dir()
 
 MOVIELENS_ROOT = Path("/home/jkr17/github/phd/clustering") / "data" / "movielens"
 EASE_PATH = MOVIELENS_ROOT / "models" / "ease.npy"
+LIFT_PATH = MOVIELENS_ROOT / "models" / "lift.npy"
 ITEMS_PATH = MOVIELENS_ROOT / "dataset" / "items.parquet"
 INTERACTIONS_PATH = MOVIELENS_ROOT / "generated" / "interactions.parquet"
 
-
 DEV = os.environ.get("DEVELOPMENT", "f") == "true"
+
+BYW_SCORE = 0.95 / math.log(NUM_TILES)
+
+
+# 90% of what collection with 50 items would get
 
 
 class EaseEngine(BaseEngine):
     def __init__(self):
         self.ease_mat = np.load(EASE_PATH)
+        self.lift_mat = np.load(LIFT_PATH)
         self.items = pl.read_parquet(ITEMS_PATH)
         self.interactions = pl.read_parquet(INTERACTIONS_PATH)
 
@@ -35,23 +43,31 @@ class EaseEngine(BaseEngine):
             image_url=pl.col("image_url"),
         )
 
-        self.tiles = [tile_from_row(row) for row in item_tiles.iter_rows(named=True)]
+        self.tiles = [tile_from_row(i, row) for i, row in enumerate(item_tiles.iter_rows(named=True))]
+        print(self.tiles[:3])
 
     def get_tile(self, index: int) -> Tile:
         return self.tiles[index]
 
     def get_carousel(self, index: int, content_indices: list[int]) -> Carousel:
+        if index < len(self.collections):
+            return Carousel(
+                id=f"carousel-{index:03d}",
+                title=self.collections[index][0],
+                tiles=[self.get_tile(i) for i in content_indices],
+            )
+
+        seed_index = index - len(self.collections)
+        seed_title = self.tiles[seed_index].title
+
         return Carousel(
             id=f"carousel-{index:03d}",
-            title=self.collections[index][0],
+            title=f"Because You Watched {seed_title}",
             tiles=[self.get_tile(i) for i in content_indices],
         )
 
     def score_items(self, user_id: int) -> list[float]:
-        interactions = self.interactions.filter(pl.col("user_id") == int(user_id)).join(
-            self.items, on="item_id"
-        )
-        watched_indices = interactions["index"].to_numpy()
+        watched_indices = self._watched_indices(user_id)
         scores = np.sum(self.ease_mat[watched_indices, :], axis=0)
         scores[watched_indices] = 0.0
 
@@ -64,15 +80,37 @@ class EaseEngine(BaseEngine):
 
         return list(scores)
 
-    def get_collections(self, user_id: str) -> list[tuple[list[int], float]]:
-        return [(item_ids, score) for label, item_ids, score in self.collections]
+    def get_collections(self, user_id: int) -> list[tuple[list[int], float]]:
+        common = [(item_ids, score) for label, item_ids, score in self.collections]
+        specific = []
+        for idx in self._watched_indices(user_id):
+            scores = self.lift_mat[idx]
+            recom_indices = np.argsort(-scores)[:NUM_TILES].tolist()
+            specific.append((recom_indices, BYW_SCORE))
+        return common + specific
+
+    def get_collections_2(self, user_id: int) -> list[tuple[list[int], float, list[float]]]:
+        common = [(item_ids, score, [1.0] * len(item_ids)) for label, item_ids, score in self.collections]
+        specific = []
+        byw_affinities = [NUM_TILES/i for i in range(NUM_TILES, 2*NUM_TILES)]
+        for idx in self._watched_indices(user_id):
+            scores = self.lift_mat[idx]
+            recom_indices = np.argsort(-scores)[:NUM_TILES].tolist()
+            specific.append((recom_indices, BYW_SCORE, byw_affinities))
+        return common + specific
+
+    @lru_cache
+    def _watched_indices(self, user_id: int) -> np.ndarray:
+        interactions = self.interactions.filter(pl.col("user_id") == int(user_id)).join(
+            self.items, on="item_id"
+        )
+        return interactions["index"].to_numpy()
 
 
-
-def tile_from_row(row: dict) -> Tile:
+def tile_from_row(i: int, row: dict) -> Tile:
     return Tile(
         **row,
-        badge=str(row["id"]) if DEV else None,
+        badge=str(i) if DEV else None,
     )
 
 

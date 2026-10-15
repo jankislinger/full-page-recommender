@@ -30,14 +30,18 @@ class BaseEngine(abc.ABC):
     def get_collections(self, user_id: str) -> list[tuple[list[int], float]]:
         pass
 
+    @abc.abstractmethod
+    def get_collections_2(self, user_id: str) -> list[tuple[list[int], float, list[float]]]:
+        pass
+
 
 def build_page(engine: BaseEngine, user_id: str) -> Page:
     scores = engine.score_items(user_id)
-    source_collections = engine.get_collections(user_id)
+    source_collections = engine.get_collections_2(user_id)
 
     collections: list[PyCollection] = []
-    for item_ids, score in source_collections:
-        c = PyCollection([score * scores[i] for i in item_ids], item_ids, is_sorted=False)
+    for item_ids, score, affinities in source_collections:
+        c = PyCollection([score * scores[i] * affinity for (i, affinity) in zip(item_ids, affinities, strict=True)], item_ids, is_sorted=False)
         collections.append(c)
 
     recommendations = recommend(collections, pos_mask(NUM_TILES), num_rows=NUM_ROWS)
